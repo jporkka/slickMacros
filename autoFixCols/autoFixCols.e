@@ -21,62 +21,68 @@
  *  References      _tbtagrefs_form               activate_references
  *  Defs            _tbproctree_form              activate_defs, activate_project_procs, activate_project_defs
  *  Message List    _tbmessages_browser_form      activate_messages
+ *  Watch           _tbdebug_watches_form         
  *   
  */
 
 #pragma option(pedantic,on)
 #include "slick.sh"    
 #import "treeview.sh"
+#import "treeview.e"
+#import "stdprocs.e"
 
 static void sizeColumns(int treeWID)
 {
     treeWID._TreeSizeColumnToContents(-1);
 }
 
-static void autoResize(_str ctlName)
+static void autoResize(_str ctlName, _str formName)
 {
     treeWid := _find_control(ctlName);
     if (treeWid) {
-        //say("Found" ctlName);
         sizeColumns(treeWid);
-    } else {
-        //say("Control not found: " ctlName);
     }
 }
 
 defeventtab _tbfind_symbol_form;
 void _tbfind_symbol_form.'A-Q'()
 {
-    autoResize("ctl_symbols");
+    autoResize("ctl_symbols", "_tbfind_symbol_form");
 }
 
 defeventtab _tbmessages_browser_form;
 void _tbmessages_browser_form.'A-Q'()
 {
-    autoResize("_message_tree");
+    autoResize("_message_tree", "_tbmessages_browser_form");
 }
 
 defeventtab _tbproctree_form;
 void _tbproctree_form.'A-Q'()
 {
-    autoResize("_proc_tree");
+    autoResize("_proc_tree", "_tbproctree_form");
 }
 
 defeventtab _tbprojects_form;
 void _tbprojects_form.'A-Q'()
 {
-    autoResize("_proj_tooltab_tree");
+    autoResize("_proj_tooltab_tree", "_tbprojects_form");
 }
 
 defeventtab _tbannotations_browser_form;
 void _tbannotations_browser_form.'A-Q'()
 {
-    autoResize("_annotation_tree");
+    autoResize("_annotation_tree", "_tbannotations_browser_form");
 }
 
 defeventtab _tbtagrefs_form;
 void _tbtagrefs_form.'A-Q'()
 {
-    autoResize("ctlreferences");
+    autoResize("ctlreferences", "_tbtagrefs_form");
+}
+
+defeventtab _tbdebug_watches_form;
+void _tbdebug_watches_form.'A-Q'()
+{
+    autoResize("ctl_watches_tree1", "_tbdebug_watches_form");
 }
 
