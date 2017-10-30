@@ -24,3 +24,6 @@ In the dialog there are some shortcuts.
 "e" - toggle enable/disable
 "w" - toggle word mode on/off.
 "F2" - edit the highlight word.
+
+https://community.slickedit.com/index.php/topic,11445.0.html
+
