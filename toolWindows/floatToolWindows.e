@@ -14,7 +14,9 @@
  */
 
 
-#pragma option(pedantic,on)
+//#pragma option(pedantic,on)
+#pragma option(strict,on)
+#pragma option(strict2,on)
 #include "slick.sh"    
 #import "keybindings.e"
 #import "se/ui/twautohide.e"
