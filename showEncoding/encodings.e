@@ -7,10 +7,14 @@
  *  
  */
 
-#pragma option(pedantic,on)
+//#pragma option(pedantic,on)
+#pragma option(strict,on)
+#pragma option(strict2,on)
 
 #include "slick.sh"
 #import "clipbd.e"
+#import "files.e"
+#import "listbox.e"
 
 static _str encodingEnum:[] = {
 
@@ -56,6 +60,55 @@ static _str encodingEnum:[] = {
    VSENCODING_AUTOTEXTUNICODE                             => "Auto Text Unicode",
 
 };
+
+static void DbgSay(_str saystring)
+{
+}
+
+_command dumpinfo() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_MACRO|VSARG2_MARK)
+{
+    //_str msg;
+    // p_buf_name
+
+    DbgSay("------");
+    DbgSay("BufName:" :+ p_buf_name);
+    DbgSay("Encoding is " :+ encodingEnum:[p_encoding]);
+    if (p_UTF8 == 0)
+        DbgSay("UTF-8 ZERO" :+ p_UTF8);
+    else
+        DbgSay("UTF-8 " :+ p_UTF8);
+
+    _str n1 = "";
+    _str n2 = "";
+    int l = length(p_newline);
+    int c1=_asc(substr(p_newline,1,1));
+    if (c1 == 10) {
+        n1 = "LF";
+    } else if (c1 == 13) {
+        n1 = "CR";
+    } else {
+        n1 = "<" :+ c1 :+ ">";
+    }
+    if (l > 1) {
+        int c2=_asc(substr(p_newline,2,1));
+        if (c2 == 10) {
+            n2 = ", LF";
+        } else if (c2 == 13) {
+            n2 = ", CR";
+        } else {
+            n2 = ", <" :+ c2 :+ ">";
+        }
+    }
+    DbgSay("NEWLINES: length=" :+ l :+ ", " :+ n1 :+ n2);
+
+    //if (l == 1) {
+    //    p_newline = "\r\n";
+    //    //DbgSay("NEWLINES: length=" :+ l :+ ", " :+ c1 :+ ", " :+ c2);
+    //} else {
+    //    p_newline = "\n";
+    //    //DbgSay("NEWLINES: " :+ c1 :+ ", " :+ c2);
+    //}
+}
 
 _str jEncodingToOption(int encoding)
 {
@@ -214,9 +267,9 @@ CTL_FORM status_gui_sessions_wid()
 
 void _switchbuf_encodings(...)
 {
-   // say ("_switchbuf_encodings: p_buf_name: " p_buf_name );
     _str msg = getEncodingStatus(p_buf_id);
     auto form = status_gui_sessions_wid();
+    //say ("_switchbuf_encodings: p_buf_name: " p_buf_name ", encoding:" msg);
     if (form) {
        // say("msg"msg", form"form", "form._tbstatus_combo_etab);
         auto wid = form._tbstatus_combo_etab;
