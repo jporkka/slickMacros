@@ -21,7 +21,8 @@
  *  References      _tbtagrefs_form               activate_references
  *  Defs            _tbproctree_form              activate_defs, activate_project_procs, activate_project_defs
  *  Message List    _tbmessages_browser_form      activate_messages
- *  Watch           _tbdebug_watches_form         
+ *  _tbdebug_watches_form
+ *  _tbopen_form
  *   
  */
 
@@ -86,3 +87,8 @@ void _tbdebug_watches_form.'A-Q'()
     autoResize("ctl_watches_tree1", "_tbdebug_watches_form");
 }
 
+defeventtab _tbopen_form;
+void _tbopen_form.'A-Q'()
+{
+    autoResize("_file_tree", "_tbopen_form");
+}
