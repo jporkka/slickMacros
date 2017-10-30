@@ -7,12 +7,10 @@
 ////////////////////////////////////////////////////////////////////////////////////
 #import "slick.sh"
 #import "markers.sh"
-#import "ColorDistance.e"
+#import "colorDistance.e"
 #import "SymDebug.e"
 #import "sc/lang/IHashTable.e"
-#pragma pedantic on
-#pragma strict on
-#pragma strict2 on
+#include "slickCompat.h"
 
 #define RGB(r, g, b) (((b)<<16)|((g)<<8)|(r))
 #define INIT_SYMCOLOR(r,g,b,name) {RGB(r,g,b),name}
@@ -196,7 +194,8 @@ static double computeDelta(int fg, ColorDefinition &colorDef)
     int c1 = fg;
     int c2 = colorDef.m_rgb;
     double delta = sym_get_color_delta(c1, c2);
-    //dbgsay("Delta Color: " colorDef.m_name ", FG: " dec2hex(fg) ", C2: " dec2hex(c2) ", Delta="delta);
+    //double delta2 = sym_get_color_delta(c2, c1);
+    //dbgsayc("Delta Color: " colorDef.m_name ", FG: " dec2hex(fg) ", C2: " dec2hex(c2) ", Delta="delta", Delta2="delta2);
     return delta;
 }
 
@@ -208,7 +207,7 @@ static int _getTextColor(int &backGround)
     return (int) fg;
 }
 
-#define MIN_BG_DELTA (1.0)
+#define MIN_BG_DELTA (6.0)
 #define MIN_FG_DELTA (10.0)
 static _str _getAnotherColor(int &colorIndex, int offset)
 {
@@ -372,7 +371,7 @@ void sym_color_remove_all_highlight_marker_types()
         if (g_SymbolColors._indexin(index) && g_SymbolColors:[index] != null)
         //if (g_SymbolColors._indexin(index) != null)
         {
-            say("Index is " index);
+            dbgsay("Index is " index);
             int markerIndex = g_SymbolColors:[index].getScrollMarkerIndex();
             if (markerIndex != -1)
             {
@@ -381,7 +380,7 @@ void sym_color_remove_all_highlight_marker_types()
         }
         else
         {
-            say("INVALID Index is " index);
+            dbgsay("INVALID Index is " index);
         }
     }
 }

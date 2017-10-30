@@ -1,24 +1,27 @@
 #import "slick.sh"
 #import "main.e"
 #import "stdprocs.e"
-#pragma pedantic on
-#pragma strict on
-#pragma strict2 on
+#include "slickCompat.h"
 
-static _str gRootPath = _ConfigPath();
+static _str gRootPath;
 static boolean joeLoad(_str moduleName)
 {
-    int status = load(gRootPath moduleName);
+    _str fullname = gRootPath moduleName;
+    //say("Loading "  gRootPath moduleName);
+    int status = load(fullname);
     if (status != 0)
     {
-        say("Status " status " On load of " moduleName);
+        say("Status " status " On load of " gRootPath moduleName);
         return false;
     }
-    //say("Status OK " " On load of " moduleName);
+    //say("Status OK " " On load of " gRootPath moduleName);
     return true;
 }
 static void SymTagload()
 {
+    _str vslickpathfilename=slick_path_search("SymDebug.e","MS");
+    path := _strip_filename(vslickpathfilename, "N");
+    gRootPath = path;//_ConfigPath();
     boolean ok = true;
     if (ok)
     {
@@ -54,7 +57,7 @@ void defmain()
 {
     if (arg(1) :== "debug")
     {
-        ok = joeLoad("SymDebug.e");
+        ok := joeLoad("SymDebug.e");
     }
     else
     {

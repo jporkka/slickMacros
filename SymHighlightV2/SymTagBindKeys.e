@@ -1,9 +1,7 @@
 #import "slick.sh"
 #import "main.e"
 #import "stdprocs.e"
-#pragma pedantic on
-#pragma strict on
-#pragma strict2 on
+#include "slickCompat.h"
 
 // set shorcut keys in SlickEdit
 void defmain()

@@ -1,10 +1,9 @@
 #import "slick.sh"
 #import "main.e"
 #import "stdprocs.e"
-#pragma pedantic on
-#pragma strict on
-#pragma strict2 on
+#include "slickCompat.h"
 
+static _str gRootPath;
 static void joeUnload(_str name)
 {
     if (pos(name, def_macfiles) > 0)
@@ -15,6 +14,9 @@ static void joeUnload(_str name)
 
 static void SymTagUnload() 
 {
+    _str vslickpathfilename=slick_path_search("SymDebug.e","MS");
+    path := _strip_filename(vslickpathfilename, "N");
+    gRootPath = path;//_ConfigPath();
     joeUnload("HighlightDialog.ex");
     joeUnload("SymHighlightApi.ex");
     joeUnload("SymHighlightMain.ex");
@@ -31,7 +33,7 @@ void defmain()
     // cache on module unload, so after unloading
     // everything, load one module to force the cache flush
     // then unload everything again.
-    execute("symtagload debug",'a');
-    SymTagUnload();
+    //execute("symtagload debug",'a');
+    //SymTagUnload();
 }
 

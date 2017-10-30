@@ -240,13 +240,14 @@ void sym_dlg_debug_dump_treelist()
     {
         return;
     }
-    dlgsay("   DumpDlgEntries   ");
+    say("   DumpDlgEntries   ");
     int index = 1;
     while (s_list_ctrl._TreeIndexIsValid(index))
     {
         _str text =  s_list_ctrl._TreeGetCaption(index, FC_NEEDLE);
         WordInfo wordSym = s_list_ctrl._TreeGetUserInfo(index);
-        dlgsay("    "index", Text:'"text"', "wordSym.toText());
+        say("    "index", Text:'"text"', "wordSym.toText());
+        s_list_ctrl._TreeSetCaption(index, text :+ "X", FC_NEEDLE);
         index++;
     }
 }
@@ -279,6 +280,10 @@ static int addItem(int treectrl, WordInfo &sym, boolean append = true)
     int index = treectrl._TreeGetNextIndex(TREE_ROOT_INDEX);
 
 #ifdef CHECK_BOXEN
+    _str item = "\t\t"  sym.getHashKey();
+#endif
+
+#ifdef CHECK_SWITCH
     _str item = "\t\t"  sym.getHashKey();
 #endif
 
@@ -470,6 +475,7 @@ typeless ctl_tree.on_change(int reason, int index,int col=-1,_str &value="",int 
 #ifdef CHECK_BOXEN
     if (reason == CHANGE_CHECK_TOGGLED || reason == CHANGE_SELECTED || reason == CHANGE_EDIT_PROPERTY)
     {
+        dlgsay("EVENTID(1): I:("index") " reasonName "," (FinderColumns)col ", col = " col);// ", Enabled=" enabled ", WW=" ww);
         #ifdef DEBUGGING
         dlgsay("EVENTID(1): I:("index") " reasonName "," (FinderColumns)col ", col = " col);// ", Enabled=" enabled ", WW=" ww);
         #endif
@@ -601,25 +607,56 @@ void _highlight_addword_tb(WordInfo &sym) // called by SymHighlight
     }
 }
 
-void _highlight_delword_tb(WordInfo &sym) // called by SymHighlight
+void _highlight_clear_tb() // called by SymHighlight
 {
-    //_post_call( def_highlight_delword_tb, sym);
-    dlgsay("_highlight_delword_tb: " sym.getHashKey());
+    //say("HEY 1");
     if (!get_tree_object())
     {
+        //say("_highlight_delword notree");
         return;
     }
-//    if (p)
+    //say("active form:" p_active_form", s_form1_p:"s_form1_p", p_window_id:"p_window_id);
+    //s_list_ctrl._TreeBeginUpdate(0);
+    //sym_dlg_debug_dump_treelist();
+    index = s_list_ctrl._TreeGetNextIndex(0);
+    while (index != -1)
     {
-        //int index = s_list_ctrl._TreeSearch(0,  sym, "IST", 0, FC_NEEDLE);
-        int index = findItem(s_list_ctrl, sym.getHashKey());
-        if (index != -1)
-        {
-            //symTagDlgSetEnabled(sym, false);
-            setCheckState(s_list_ctrl, index, FC_ENABLED, sym.enabled());
-            xTreeSetUserInfo(s_list_ctrl, index, sym);
-        }
+        setCheckState(s_list_ctrl, index, FC_ENABLED, false);
+        index = s_list_ctrl._TreeGetNextIndex(index);
     }
+    //s_list_ctrl._TreeEndUpdate(0);
+    s_list_ctrl._TreeRefresh();
+}
+void _highlight_delword_tb(WordInfo &sym) // called by SymHighlight
+{
+    //say("HEY");
+    //_post_call( def_highlight_delword_tb, sym);
+    if (!get_tree_object())
+    {
+        //say("_highlight_delword notree");
+        return;
+    }
+    //say("active form:" p_active_form", s_form1_p:"s_form1_p", p_window_id:"p_window_id);
+    //say("_highlight_delword_tb: " sym.getHashKey());
+    int index = findItem(s_list_ctrl, sym.getHashKey());
+    dbgsay("_highlight_delword_tb: " sym.getHashKey() ", index:"index", Enabled:"sym.enabled());
+    if (index != -1)
+    {
+        //xTreeSetUserInfo(s_list_ctrl, index, sym);
+        //setCheckState(s_list_ctrl, index, FC_WHOLEWORD, sym.enabled());
+        setItemState(s_list_ctrl, index, sym);
+        //setCheckState(s_list_ctrl, index, FC_ENABLED, sym.enabled());
+        //symTagDlgSetEnabled(sym, false);
+        //_post_call( DeferredDisable, index );
+    }
+    //s_list_ctrl._TreeBeginUpdate(0);
+    //index = s_list_ctrl._TreeGetNextIndex(0);
+    //while (index != -1)
+    //{
+    //    setCheckState(s_list_ctrl, index, FC_ENABLED, false);
+    //    index = s_list_ctrl._TreeGetNextIndex(index);
+    //}
+    //s_list_ctrl._TreeEndUpdate(0);
 }
 /////////////////////////////////////////////////////////////////////////// 
 /*

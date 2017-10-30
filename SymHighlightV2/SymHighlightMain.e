@@ -16,15 +16,24 @@
 #import "WordInfo.e"
 #import "SymDebug.e"
 
-#pragma pedantic on
-#pragma strict on
-#pragma strict2 on
+#include "slickCompat.h"
+
+//#define STREAM_LINE
+#define USE_STREAM_MARKER
+//#define USE_LINE_MARKER
+//#define USE_SCROLL_MARKER
+
+#define STREAM_MARKER_TYPE VSMARKERTYPEFLAG_DRAW_BOX
+//#define STREAM_MARKER_TYPE VSMARKERTYPEFLAG_DRAW_FOCUS_RECT
+//#define STREAM_MARKER_TYPE 0
 
 #define SYMTAB_NOTIFY_DELWORD '_highlight_delword'
+#define SYMTAB_NOTIFY_CLEAR   '_highlight_clear'
 #define SYMTAB_NOTIFY_ADDWORD '_highlight_addword'
 #define SYMTAB_NOTIFY_CYCLECOLOR '_highlight_cyclecolor'
 
 WordInfo s_symTags:[];
+boolean sym_debug_output = false;
 _str s_searchString = null;
 int s_timerSymHighlight = -1;
 int s_markertypeSymHighlight = -1;
@@ -225,7 +234,6 @@ void sym_update_screen(boolean fNow, _str updateMethod="sym_symtag_update_window
 
 void _switchbuf_tbhighlight(_str oldbuffname, _str flag, _str swold_pos=null, _str swold_buf_id= -1)
 {
-    //say("SwitchBuf, Old:" oldbuffname ", New:" p_buf_name);
     if (flag=='Q') 
     {
         return; // Ignore buffers being closed.
@@ -238,10 +246,28 @@ void _switchbuf_tbhighlight(_str oldbuffname, _str flag, _str swold_pos=null, _s
         createSearchString();
     }
     typeless modTime = _GetBufferInfoHt(s_bufferModTimeKey)
+    //say("gSymAutoUpdate:"gSymAutoUpdate);
+    //if (modTime != null)
+    //{
+    //    say("modTime:"modTime);
+    //}
+    //say("s_modtimeSymHighlight:"s_modtimeSymHighlight);
+    //say("SwitchBuf, Old:" oldbuffname ", New:" p_buf_name);
+    if (_isdiffed(p_buf_id))
+    {
+        //say("ISDIFF:"p_buf_name);
+        //say("ISDIFF SwitchBuf update, Old:" swold_buf_id ", New:" p_buf_name);
+    }
+    else
+    {
+        //say("nodiff SwitchBuf update, Old:" oldbuffname ", New:" p_buf_name);
+    }
     if (gSymAutoUpdate)
     {
-        if (modTime != s_modtimeSymHighlight)
+        if (modTime == null || modTime != s_modtimeSymHighlight)
         {
+            // _macro_call
+            //say("SwitchBuf update, Old:" oldbuffname ", New:" p_buf_name);
             _SetBufferInfoHt(s_bufferModTimeKey, s_modtimeSymHighlight);
             sym_symtag_update_window();
         }
@@ -271,8 +297,15 @@ WordInfo sym_get_curword_or_selection()
     }
 
     _str word = cur_word(start_col);
+    if (sym_debug_output)
+    {
+        wordselectsay("start_col"start_col", curword is: "word", p_word_chars:"p_word_chars);
+    }
     WordInfo wordInfo(word, "", true);
-    //dbgsay("a2Sym is " :+ wordInfo.toString());
+    if (sym_debug_output)
+    {
+        wordselectsay("a2Sym is " :+ wordInfo.toString());
+    }
     return wordInfo;
 }
 
@@ -302,7 +335,7 @@ void sym_symtag_update_window()
 //    say("sym_symtag_update_window Current WID is"p_window_id);
     if (p_object != OI_EDITOR)
     {
-        say("sym_symtag_update_window Current Object is"p_object);
+        ///say("sym_symtag_update_window Current Object is"p_object);
         return;
     }
     if (isSystemBuffer())
@@ -321,6 +354,7 @@ void sym_symtag_update_window()
     save_selection(m);
     save_search(ss, sf, sw, sr, sf2);
     _StreamMarkerRemoveType(p_window_id, s_markertypeSymHighlight); // Remove all highlights from this window
+    _LineMarkerRemoveType(p_window_id, s_markertypeSymHighlight);   // Remove all highlights from this window
     sym_color_remove_highlight_markers(p_window_id); // Remove all scrollbar marks from this window
 
     dbgsay("Update: " p_buf_name);
@@ -352,6 +386,18 @@ void sym_symtag_update_window()
                 long offset_highlight = match_length('S');//_QROffset();
                 int length_Highlight  = match_length(); //s._length();
 
+                #if defined(STREAM_LINE) && defined(USE_STREAM_MARKER)
+                typeless po;
+                save_pos(po);
+                _begin_line();
+                offset_highlight = _QROffset();
+                _end_line();
+                offset_end := _QROffset();
+                length_Highlight = (int)(offset_end - offset_highlight);
+                isRealOffset = true;
+                restore_pos(po);
+                #endif
+
                 int colorIndex = -1;
                 dbgsay("ML " match_length() ", _QROffset:"(int)_QROffset() ", offset_highlight ="offset_highlight ", MatchText is:"s);
                 //dbgsay("s_searchString:" s_searchString ", S is " s);
@@ -370,12 +416,31 @@ void sym_symtag_update_window()
                     SymbolColor *c = getSymColorFromTag(s);
                     if (c != null)
                     {
+                        #ifdef USE_LINE_MARKER
+                        int rgb = 0x00ff00;
+                        ColorDefinition *colorDef = c->getColorDef();
+                        if (colorDef != null)
+                        {
+                            rgb = colorDef->m_rgb;
+                        }
+                        #endif
                         dbgsay("2");
                         colorIndex = c->getMarkerIndex();
                         if (colorIndex != -1)
                         {
+                            #ifdef USE_STREAM_MARKER
                             int pos_marker = _StreamMarkerAdd( p_window_id, offset_highlight, length_Highlight, isRealOffset, 0, s_markertypeSymHighlight, '');
                             _StreamMarkerSetTextColor(pos_marker, colorIndex);
+                            #endif 
+
+                            #ifdef USE_LINE_MARKER
+                            line_maker:=_LineMarkerAdd(p_window_id, p_line, false, 1, 0, s_markertypeSymHighlight, "MESSAGE");
+                            _LineMarkerSetStyleColor(line_maker, rgb);
+                            #endif
+
+                            #ifdef USE_SCROLL_MARKER
+                            int line_marker = _ScrollMarkupAdd(p_window_id, p_line, c->getScrollMarkerIndex(), 1);
+                            #endif
                             dbgsay("3");
                         }
                         if (def_sym_highlight_use_scrollmarkers)
@@ -405,6 +470,7 @@ void sym_symtag_update_window()
 static void symTagResetWindow()
 {
     _StreamMarkerRemoveType(p_window_id, s_markertypeSymHighlight);
+    _LineMarkerRemoveType(p_window_id, s_markertypeSymHighlight);
     sym_color_remove_highlight_markers(p_window_id);
 
     refresh();
@@ -433,6 +499,8 @@ static void DeferredInitSymHighlight()
         if ( s_markertypeSymHighlight == -1 )
         {
             s_markertypeSymHighlight = _MarkerTypeAlloc();
+            _MarkerTypeSetFlags(s_markertypeSymHighlight, VSMARKERTYPEFLAG_AUTO_REMOVE | STREAM_MARKER_TYPE);
+            //MarkerTypeSetFlags(s_markertypeSymHighlight, VSMARKERTYPEFLAG_DRAW_BOX);
             initsay("DeferredInitSymHighlight 2.5 s_markertypeSymHighlight:"s_markertypeSymHighlight);
         }
 
@@ -494,8 +562,32 @@ static void _InitSymColor()
 /*-------------------------------------------------------------------------------
     sym_do_clear_all_highlight_structs
 -------------------------------------------------------------------------------*/
+void delayed_clear_all(int current)
+{
+    int i;
+
+    WordInfo x_symTags:[] = s_symTags;
+
+    WordInfo sym;
+    dbgsay("delayed_clear_all:" current);
+    _str index;
+    if (current == 0)
+    {
+        return;
+    }
+    foreach ( index => sym in x_symTags )
+    {
+        sym_remove_symtag(index);
+        sym.setEnabled(false);
+        //say("3: "sym.getHashKey());
+        call_list(SYMTAB_NOTIFY_DELWORD, sym);
+        _post_call( delayed_clear_all, current - 1 );
+        break;
+    }
+}
 void sym_do_clear_all_highlight_structs()
 {
+//    _post_call( delayed_clear_all, 10 );
     int i;
 
     WordInfo x_symTags:[] = s_symTags;
@@ -505,8 +597,10 @@ void sym_do_clear_all_highlight_structs()
     foreach ( index => sym in x_symTags )
     {
         sym_remove_symtag(index);
-        call_list(SYMTAB_NOTIFY_DELWORD, sym);
+        sym.setEnabled(false);
+        //say("3: "sym.getHashKey());
     }
+    call_list(SYMTAB_NOTIFY_CLEAR);
 
     //sym_color_reset();
 }
@@ -540,7 +634,7 @@ static void initGlobals()
 }
 
 
-static _str _ModuleName = "SymhighlightJoe";
+static _str _ModuleName = "SymhighlightMain";
 definit()
 {
     if (arg(1) == 'L')

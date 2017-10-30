@@ -10,15 +10,13 @@
 #import "stdprocs.e"
 #import "sc/lang/IToString.e"
 #import "sc/lang/IHashable.e"
-#import "ColorDistance.e"
+#import "colorDistance.e"
 #import "markers.sh"
 #import "SymColors.e"
 #import "WordInfo.e"
 #import "SymDebug.e"
 #import "SymHighlightMain.e"
-#pragma pedantic on
-#pragma strict on
-#pragma strict2 on
+#include "slickCompat.h"
 
 int g_windowId = -1;
 
@@ -91,7 +89,9 @@ _command void symtag_toggle_sym_highlight() name_info(',')
     if (sym != null)
     {
         selSym = *sym;
+        selSym.setEnabled(false);
         sym_remove_symtag(key);
+        //say("1");
         call_list(SYMTAB_NOTIFY_DELWORD, selSym);
     }
     else
@@ -102,6 +102,12 @@ _command void symtag_toggle_sym_highlight() name_info(',')
 
     sym_update_screen(true /* update now */);
 }
+
+//_command void symtag_toggle_sym_line_highlight() name_info(',')
+//{
+//}
+//
+//
 
 /** 
  *  symtag_cycle_sym_highlight
@@ -293,7 +299,9 @@ boolean symTagDlgChangeSymTag(_str fromWord, WordInfo newWord)
     if (sym != null)
     {
         WordInfo selSym = *sym;
+        selSym.setEnabled(false);
         sym_remove_symtag(fromWord);
+        //say("2");
         call_list(SYMTAB_NOTIFY_DELWORD, selSym);
     }
     sym_add_symtag(newWord);

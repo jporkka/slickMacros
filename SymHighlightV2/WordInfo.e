@@ -10,9 +10,7 @@
 #require "sc/lang/IToString.e"
 #require "sc/lang/IHashable.e"
 #require "sc/lang/IEquals.e"
-#pragma pedantic on
-#pragma strict on
-#pragma strict2 on
+#include "slickCompat.h"
 
 // , sc.lang.IHashable
 class WordInfo : sc.lang.IEquals, sc.lang.IToString

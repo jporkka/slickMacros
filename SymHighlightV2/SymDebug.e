@@ -6,11 +6,21 @@
 // Bssed on the highlight code of MarkSun
 ////////////////////////////////////////////////////////////////////////////////////
 #import "slick.sh"
-#pragma pedantic on
-#pragma strict on
-#pragma strict2 on
+#include "slickCompat.h"
 
 //#define DEBUGGING
+
+boolean getF()
+{
+    return 1;
+}
+
+void wordselectsay(_str msg)
+{
+    _SccDisplayOutput("DLG: " msg, false, false, false);
+//    _message_box(msg);
+//    say("DLG: " msg);
+}
 
 void dlgsay(_str msg)
 {
@@ -19,9 +29,16 @@ void dlgsay(_str msg)
 //    say("DLG: " msg);
 }
 
+void dbgsayc(_str msg)
+{
+//    _SccDisplayOutput("DBG: " msg);
+//    _message_box(msg);
+//    say("SYM: " msg);
+}
+
 void dbgsay(_str msg)
 {
- //   _SccDisplayOutput("DBG: " msg);
+//    _SccDisplayOutput("DBG: " msg);
 //    _message_box(msg);
 //    say("SYM: " msg);
 }
