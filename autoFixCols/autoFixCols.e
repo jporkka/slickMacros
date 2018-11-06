@@ -1,6 +1,6 @@
 /*
  * autoFixCols.e
- * joe porkka, 2017
+ * joe porkka, 2018
  *
  * I've found that some tool windows in Slick that have a table with columns do not always
  * get correctly sized by default.
@@ -21,6 +21,7 @@
  *  References      _tbtagrefs_form               activate_references
  *  Defs            _tbproctree_form              activate_defs, activate_project_procs, activate_project_defs
  *  Message List    _tbmessages_browser_form      activate_messages
+ *  Bookmarks       _tbbookmarks_form               
  *  _tbdebug_watches_form
  *  _tbopen_form
  *   
@@ -35,13 +36,18 @@
 static void sizeColumns(int treeWID)
 {
     treeWID._TreeSizeColumnToContents(-1);
+    // _TreeScaleColButtonWidths
+    // _TreeAdjustLastColButtonWidth
 }
 
 static void autoResize(_str ctlName, _str formName)
 {
     treeWid := _find_control(ctlName);
     if (treeWid) {
+        //say("Found" formName "." ctlName);
         sizeColumns(treeWid);
+    } else {
+        //say("Control not found: " formName "." ctlName);
     }
 }
 
@@ -55,6 +61,12 @@ defeventtab _tbmessages_browser_form;
 void _tbmessages_browser_form.'A-Q'()
 {
     autoResize("_message_tree", "_tbmessages_browser_form");
+}
+
+defeventtab _tbbookmarks_form;
+void _tbbookmarks_form.'A-Q'()
+{
+    autoResize("ctl_bookmarks_tree", "_tbbookmarks_form");
 }
 
 defeventtab _tbproctree_form;

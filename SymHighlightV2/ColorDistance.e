@@ -1,6 +1,4 @@
 ﻿////////////////////////////////////////////////////////////////////////////////////
-// Revision: 1 
-////////////////////////////////////////////////////////////////////////////////////
 // SymHighlight
 // Joe Porkka
 // Bssed on the highlight code of MarkSun
@@ -295,21 +293,23 @@ static XYZ rgb_to_xyz(int rgb)
     double green  = ((rgb         & 0xff00)   >> 8) / 255.0;
     double blue   = ((rgb         & 0xff0000) >> 16) / 255.0;
 
-    if(red>0.04045){
+    if(red > 0.04045){
         red = (red+0.055)/1.055;
         red = jpow(red,12, 5); // 2.4
     }
-    else{
+    else
+    {
         red = red/12.92;
     }
-    if(green>0.04045){
+    if(green > 0.04045){
         green = (green+0.055)/1.055;
         green = jpow(green, 12, 5); // 2.4
     }
-    else{
+    else
+    {
         green = green/12.92;
     }
-    if(blue>0.04045){
+    if(blue > 0.04045){
         blue = (blue+0.055)/1.055;
         blue = jpow(blue,12, 5);
     }
@@ -329,7 +329,7 @@ static XYZ rgb_to_xyz(int rgb)
 static LAB xyz_to_lab(XYZ &xyz)
 {
     double x = xyz.x/95.047;
-    double y = xyz.y/100;
+    double y = xyz.y/100.0;
     double z = xyz.z/108.883;
 
     if (x>0.008856)
@@ -372,20 +372,25 @@ static double de_1994(LAB &lab1, LAB &lab2)
     double kc = 1.0;
     double kh = 1.0;
 
-    double c1 = sqrt(lab1.a*lab1.a+lab1.b*lab1.b);  // C1 = sqrt(a1^2 + b1^2)
-    double c2 = sqrt(lab2.a*lab2.a+lab2.b*lab2.b);  // C2 = sqrt(a2^2 + b2^2)
+    double c1 = sqrt(lab1.a * lab1.a + lab1.b * lab1.b);  // C1 = sqrt(a1^2 + b1^2)
+    double c2 = sqrt(lab2.a * lab2.a + lab2.b * lab2.b);  // C2 = sqrt(a2^2 + b2^2)
     double dc = c1-c2;           // ∆C
     double dl = lab1.L - lab2.L; // ∆L
     double da = lab1.a - lab2.a; // ∆a
     double db = lab1.b - lab2.b; // ∆b
     double dh = sqrt((da * da) + (db * db) - (dc * dc)); // ∆H = sqrt(∆a^2 + ∆b^2 - ∆c^2)
 
-    double sc = 1 + k1 * c1;
-    double sh = 1 + k2 * c1;
-    double first  = dl / (kl * sl);
-    double second = dc / (kc * sc);
-    double third  = dh / (kh * sh);
-    return sqrt(first * first + second * second + third * third);
+    //double sc = 1 + k1 * c1;
+    //double sh = 1 + k2 * c1;
+    //double first  = dl / (kl * sl);
+    //double second = dc / (kc * sc);
+    //double third  = dh / (kh * sh);
+    //return sqrt(first * first + second * second + third * third);
+
+   double first  = dl;
+   double second = dc / (1 + 0.045 * c1);
+   double third  = dh / (1 + 0.015 * c1);
+   return(sqrt(first * first + second * second + third * third));
 }
 
 double sym_get_color_delta(int c1, int c2)

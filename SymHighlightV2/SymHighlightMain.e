@@ -1,6 +1,4 @@
 ////////////////////////////////////////////////////////////////////////////////////
-// Revision: 1 
-////////////////////////////////////////////////////////////////////////////////////
 // SymHighlight
 // Joe Porkka
 // Bssed on the highlight code of MarkSun
@@ -44,10 +42,22 @@ boolean def_sym_highlight_use_scrollmarkers = 1;
 boolean def_sym_highlight_confirm_clear = 0;
 boolean def_sym_highlight_persist_across_sessions = 0;
 
-static int s_modtimeSymHighlight = 0;
+static int s_modtimeSymHighlight = 0; // Tracks changes to highlights and updates buffers with out of date highlights.
 static boolean gSymAutoUpdate = true;
 static boolean gSymUpdateTimer = false;
 static _str s_bufferModTimeKey = "sym_tag_updatetime";
+
+_command void symtag_toggle_word_select() name_info(',')
+{
+    if (!def_sym_enable_debug_print) {
+        sym_debug_output = true;
+        def_sym_enable_debug_print = true;
+        def_sym_debug_print_filter |= SYMTAG_DEBUG_WORDSELECTSAY;
+    } else {
+        sym_debug_output = false;
+        def_sym_enable_debug_print = false;
+    }
+}
 
 static void clearSearchString()
 {
@@ -80,6 +90,7 @@ static void createSearchString()
         }
     }
     dbgsay("createSearchString: "s_searchString);
+    s_modtimeSymHighlight += 1;
 }
 
 static SymbolColor *getSymColorFromTag(_str &key)
@@ -201,7 +212,7 @@ SymbolColor *sym_get_symcolor_from_sym(WordInfo &sym)
 }
 
 /*----------------------------------------------------------------------------
-   Goes through the current buffer and update the highlights based on current
+   Goes through the current buffer and updates the highlights based on current
    information.
 ----------------------------------------------------------------------------*/
 void sym_update_screen(boolean fNow, _str updateMethod="sym_symtag_update_window")
@@ -220,10 +231,10 @@ void sym_update_screen(boolean fNow, _str updateMethod="sym_symtag_update_window
     if (gSymAutoUpdate)
     {
         typeless modTime = _GetBufferInfoHt(s_bufferModTimeKey)
-        if (modTime != s_modtimeSymHighlight || fNow)
+        if (modTime != s_modtimeSymHighlight )//|| fNow)
         {
             _SetBufferInfoHt(s_bufferModTimeKey, s_modtimeSymHighlight);
-
+        
             for_each_mdi_child(updateMethod,'');
         }
 
@@ -246,13 +257,6 @@ void _switchbuf_tbhighlight(_str oldbuffname, _str flag, _str swold_pos=null, _s
         createSearchString();
     }
     typeless modTime = _GetBufferInfoHt(s_bufferModTimeKey)
-    //say("gSymAutoUpdate:"gSymAutoUpdate);
-    //if (modTime != null)
-    //{
-    //    say("modTime:"modTime);
-    //}
-    //say("s_modtimeSymHighlight:"s_modtimeSymHighlight);
-    //say("SwitchBuf, Old:" oldbuffname ", New:" p_buf_name);
     if (_isdiffed(p_buf_id))
     {
         //say("ISDIFF:"p_buf_name);
@@ -277,9 +281,16 @@ void _switchbuf_tbhighlight(_str oldbuffname, _str flag, _str swold_pos=null, _s
 // Capture the current word or current selection for highlighting.
 WordInfo sym_get_curword_or_selection()
 {
-    int start_col, end_col;
+    int start_col = -1;
+    int end_col = -1;
     boolean isSelection = false;
+    _str word = "NOWORD";
 
+    if ( !(_select_type() == "CHAR" || _select_type() == ""))
+    {
+        WordInfo wordInfo("", "", true);
+        return wordInfo;
+    }
     if (_select_type() == "CHAR")
     {
         int dummy;
@@ -288,18 +299,43 @@ WordInfo sym_get_curword_or_selection()
         _get_selinfo(start_col, end_col, dummy, '', dummy2, dummy, dummy, numLines);
         if (numLines == 1 && start_col != end_col)
         {
-            _str word = _expand_tabsc(start_col, end_col - start_col, 'S'); // TODO: If tabs are changed to spaces, then the string will never match will it?
+            word = _expand_tabsc(start_col, end_col - start_col, 'S'); // TODO: If tabs are changed to spaces, then the string will never match will it?
             isSelection = true;
             WordInfo wordInfo(word, "", false);
-            dbgsay("a1Sym is " :+ wordInfo.toString());
+            if (sym_debug_output)
+            {
+                wordselectsay("_get_selinfo1 start_col=" start_col \
+                              ", end_col=" end_col \
+                              ", p_col=" p_col \
+                              ", numLines=" numLines \
+                              ", curword is=" word \
+                              ", p_word_chars=" p_word_chars \
+                              ", _select_type()=" _select_type());
+            }
+            //wordselectsay("a1Sym is " :+ wordInfo.toString());
             return wordInfo;
+        } else {
+            if (sym_debug_output)
+            {
+                wordselectsay("_get_selinfo2 start_col=" start_col \
+                              ", end_col=" end_col \
+                              ", p_col=" p_col \
+                              ", numLines=" numLines \
+                              ", p_word_chars=" p_word_chars\
+                              ", _select_type()=" _select_type());
+            }
         }
     }
 
-    _str word = cur_word(start_col);
+    word = cur_word(start_col);
     if (sym_debug_output)
     {
-        wordselectsay("start_col"start_col", curword is: "word", p_word_chars:"p_word_chars);
+        wordselectsay("_get_selinfo3 start_col=" start_col \
+                      ", end_col=" end_col \
+                      ", p_col=" p_col \
+                      ", curword is=" word \
+                      ", p_word_chars=" p_word_chars \
+                      ", _select_type()=" _select_type());
     }
     WordInfo wordInfo(word, "", true);
     if (sym_debug_output)
@@ -326,6 +362,19 @@ static boolean isSystemBuffer()
     }
     //focus_wid._isEditorCtl()
     return false;
+}
+
+_command void symtag_next_tag() name_info(',')
+{
+    say(",...");
+      _StreamMarkerFindList(auto markerIdList,p_window_id,_QROffset(),1000,-1000,s_markertypeSymHighlight);
+      // markerId is the StreamMarkerIndex returned by _StreamMarkerAdd
+      foreach (auto markerId in markerIdList) {
+         _StreamMarkerGet(markerId, auto markerInfo);
+         //VSSTREAMMARKERINFO
+         // maybe strip off the symbol color prefix
+         say("MARKER qr=" _QROffset() ", Marker.start=" markerInfo.StartOffset ", len" markerInfo.Length ", ColorIndex " markerInfo.ColorIndex ", markerId=" markerId);
+      }
 }
 /*-------------------------------------------------------------------------------
     sym_symtag_update_window
@@ -511,7 +560,7 @@ static void DeferredInitSymHighlight()
         }
 
         initsay("DeferredInitSymHighlight3");
-        _InitSymColor();
+        //_InitSymColor();
         //if (!def_sym_highlight_persist_across_sessions)
         //{
         //    sym_do_clear_all_highlight_structs();
@@ -521,41 +570,6 @@ static void DeferredInitSymHighlight()
             s_timerSymHighlight = _set_timer( def_sym_highlight_delay, SymHighlightCallback );
         }
     }
-}
-
-/*-------------------------------------------------------------------------------
-    _InitSymColor
--------------------------------------------------------------------------------*/
-static void _InitSymColor()
-{
-//    int num = g_SymbolColors._length();
-    int i;
-    dbgsay("_InitSymColor1");
-
-//    if (!def_sym_highlight_persist_across_sessions || g_SymbolColors._length() == 0)
-//    {
-//        for (i = 0; i < num; ++i)
-//        {
-//            g_SymbolColors:[i].m_cRef = 0;
-//        }
-//    }
-//    for (i = 0; i < num; ++i)
-//    {
-//        //double delta = sym_get_color_delta(g_SymbolColors[i].m_rgb, 0xffffff);
-//        //dbgsay("Delta colors " g_SymbolColors[i].m_name ", WHITE == " delta);
-//        g_SymbolColors:[i].m_ColorSymHighlight = -1;
-//    }
-//
-//    if (def_sym_highlight_persist_across_sessions)
-//    {
-//        for (i=0; i < g_SymbolColors._length(); i++)
-//        {
-//            //if (g_SymbolColors[i].m_cRef > 0)
-//            {
-//                EnsureColor(i);
-//            }
-//        }
-//    }
 }
 
 
@@ -628,7 +642,7 @@ static void initGlobals()
     gSymUpdateTimer                           = false;
 
     def_sym_highlight_delay                   = 500;
-    def_sym_highlight_use_scrollmarkers       = 0;
+    def_sym_highlight_use_scrollmarkers       = 1;
     def_sym_highlight_confirm_clear           = 0;
     def_sym_highlight_persist_across_sessions = 0;
 }

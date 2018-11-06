@@ -1,6 +1,4 @@
 ////////////////////////////////////////////////////////////////////////////////////
-// Revision: 1 
-////////////////////////////////////////////////////////////////////////////////////
 // SymHighlight
 // Joe Porkka
 // Bssed on the highlight code of MarkSun
@@ -66,7 +64,7 @@ _form Highlights {
       p_max_click=MC_SINGLE;
       p_message="Remove the Item Parameter from the List";
       p_Nofstates=1;
-      p_picture="_deleten.ico";
+      p_picture="bbdelete.svg";
       p_stretch=false;
       p_style=PSPIC_BUTTON;
       p_tab_index=6;
@@ -86,7 +84,7 @@ _form Highlights {
       p_max_click=MC_SINGLE;
       p_message="Add a New Item to the End of the List";
       p_Nofstates=1;
-      p_picture="_add.ico";
+      p_picture="bbadd.svg";
       p_stretch=false;
       p_style=PSPIC_BUTTON;
       p_tab_index=9;

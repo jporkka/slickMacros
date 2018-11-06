@@ -1,6 +1,4 @@
 ////////////////////////////////////////////////////////////////////////////////////
-// Revision: 1 
-////////////////////////////////////////////////////////////////////////////////////
 // SymHighlight
 // Joe Porkka
 // Bssed on the highlight code of MarkSun
@@ -74,6 +72,13 @@ _command boolean symtag_add_word(_str word=null, ...) name_info(',')
     return true;
 }
 
+_command void symtag_toggle_debug() name_info(',')
+{
+    def_sym_enable_debug_print = !def_sym_enable_debug_print;
+    def_sym_debug_print_filter = SYMTAG_DEBUG_WORDSELECTSAY;
+    def_sym_debug_print_type = SYMTAG_DEBUG_TYPE_OUTPUT;
+}
+
 /** 
  *  symtag_toggle_sym_highlight
  * Toggle the highlight of the word under the cursor or the 
@@ -84,6 +89,10 @@ _command void symtag_toggle_sym_highlight() name_info(',')
     int i;
     WordInfo selSym = sym_get_curword_or_selection();
 
+    if (selSym.toString() == "")
+    {
+        return;
+    }
     _str key = selSym.getHashKey();
     WordInfo *sym = sym_get_wordinfo(key);
     if (sym != null)

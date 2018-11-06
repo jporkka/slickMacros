@@ -7,9 +7,9 @@
  *  
  * Load this module, then run 
  *  
- *      bindToolwindowToggles      -- bind A+F2 to each toolwindow
- *      unbindToolwindowToggles    -- remove the A+F2 bindings.
- *      listToolwindowToggles      -- list the bindings.
+ *      jp_toolwindow_toggles_bind      -- bind A+F2 to each toolwindow
+ *      jp_toolwindow_toggles_unbind    -- remove the A+F2 bindings.
+ *      jp_toolwindow_toggles_list      -- list the bindings.
  *  
  */
 
@@ -74,6 +74,7 @@ namespace float_tool_windows {
         '_tbdebug_exceptions_form',     // activate_exceptions
         '_tbdebug_sessions_form',       // activate_sessions
         '_tbfind_form',                 // activate_find
+        '_git_repository_browser_form', // git repo browser
     };
 
     void get_key_bindings(_str fnName, _str (&keyBindings)[])
@@ -172,8 +173,11 @@ _command void twc_toggle_dock_tool_window_with_focus()
                 float_tool_window(wid);
             }
         }
+        fwid._set_focus();
+    } else {
+        //int wid = fwid.p_active_form;
+        //say("No fwid:" fwid", Form:"wid", FormName:"wid.p_name);
     }
-    _set_focus();
 }
 
 _command void twc_toggle_pin_tool_window_with_focus()
@@ -209,14 +213,14 @@ _command void twc_close_tool_window_with_focus()
 ///////////////////////////////////////////////
 // Commands to manage tool window key bindings
 ///////////////////////////////////////////////
-_command void bindToolwindowToggles()
+_command void jp_toolwindow_toggles_bind()
 {
     int fnIndex;
 
     foreach (auto binding in g_tool_key_bindings_table) {
         fnIndex  = find_index(binding.mBoundFunction, COMMAND_TYPE);
         if (fnIndex == 0) {
-            _message_box("unknown function: " binding.mBoundFunction, "bindToolwindowToggles", IDOK);
+            _message_box("unknown function: " binding.mBoundFunction, "jp_toolwindow_toggles_bind", IDOK);
             break;
         }
         if (!do_bind_tool_window_toggles(fnIndex, binding.mKeyName))
@@ -227,7 +231,7 @@ _command void bindToolwindowToggles()
     }
 }
 
-_command void unbindToolwindowToggles()
+_command void jp_toolwindow_toggles_unbind()
 {
     foreach (auto binding in g_tool_key_bindings_table) {
         _str bindings [];
@@ -239,14 +243,14 @@ _command void unbindToolwindowToggles()
     }
 }
 
-_command void listToolwindowToggles()
+_command void jp_toolwindow_toggles_list()
 {
     foreach (auto binding in g_tool_key_bindings_table) {
         _str bindings [];
         get_key_bindings(binding.mBoundFunction, bindings);
         _str name;
         foreach (name in bindings) {
-            say(binding.mBoundFunction "bound to " name);
+            say(name " bound to " binding.mBoundFunction);
         }
     }
 }
