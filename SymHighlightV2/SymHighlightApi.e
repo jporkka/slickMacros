@@ -354,5 +354,3 @@ _command void quick_SymHighlightsSetSEKeys() name_info(','VSARG2_EDITORCTL|VSARG
 } 
      
 */
-
-

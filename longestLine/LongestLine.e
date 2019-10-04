@@ -179,4 +179,3 @@ _command void find_the_longest_line() name_info(','VSARG2_MARK|VSARG2_MACRO|VSAR
     _message_box(msg);
 }
 
-

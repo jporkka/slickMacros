@@ -31,7 +31,7 @@ static ColorDefinition g_ColorDefinitions[] =
     INIT_SYMCOLOR(0xF0, 0xFF, 0xFF, "Azure"),                    // -
 //    INIT_SYMCOLOR(0xF5, 0xF5, 0xDC, "Beige"),                    // 
 //    INIT_SYMCOLOR(0xFF, 0xE4, 0xC4, "Bisque"),                   // 
-    INIT_SYMCOLOR(0x00, 0x00, 0x00, "Black"),                    // -
+    INIT_SYMCOLOR(0x00, 0x00, 0x00, "Black"),                    // - 
 //    INIT_SYMCOLOR(0xFF, 0xEB, 0xCD, "BlanchedAlmond"),           // 
     INIT_SYMCOLOR(0x00, 0x00, 0xFF, "Blue"),                     // x
     INIT_SYMCOLOR(0x8A, 0x2B, 0xE2, "BlueViolet"),               // x

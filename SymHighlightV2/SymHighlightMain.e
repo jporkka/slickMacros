@@ -36,7 +36,7 @@ _str s_searchString = null;
 int s_timerSymHighlight = -1;
 int s_markertypeSymHighlight = -1;
 
-int def_sym_highlight_delay = 500;
+int def_sym_highlight_delay = 500; 
 int def_sym_highlight_max_buffer_size = 250 * 1000 * 1000;
 boolean def_sym_highlight_use_scrollmarkers = 1;
 boolean def_sym_highlight_confirm_clear = 0;
@@ -683,5 +683,4 @@ defload()
 {
     initsay("defload Reset "_ModuleName);
 }
-
 

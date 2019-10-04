@@ -45,7 +45,7 @@ namespace float_tool_windows {
         '_tbtagrefs_form',              // activate_references
         '_tbshell_form',                // activate_build
         '_tboutputwin_form',            // activate_output
-        '_tbprojects_form',             // activate_projects,activate_project_files
+        '_tbprojects_form',             // activate_projects,activate_project_files 
         '_tbcontext_form',              // activate_context
         '_tbproctree_form',             // activate_defs,activate_project_procs,activate_project_defs
         '_tbfilelist_form',             // activate_files
@@ -253,5 +253,4 @@ _command void jp_toolwindow_toggles_list()
             say(name " bound to " binding.mBoundFunction);
         }
     }
-}
-
+} 
