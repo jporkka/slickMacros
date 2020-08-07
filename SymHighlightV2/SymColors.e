@@ -238,6 +238,7 @@ static _str _getAnotherColor(int &colorIndex, int offset)
     int count = 0;
     do
     {
+        ++count;
         dbgsayc("colorIndex="colorIndex ", new colorIndex ="(colorIndex + offset) % g_ColorDefinitions._length());
         colorIndex = (colorIndex + offset);
         if (colorIndex >= g_ColorDefinitions._length())
