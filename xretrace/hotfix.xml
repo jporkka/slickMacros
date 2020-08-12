@@ -1,0 +1,118 @@
+<!DOCTYPE HotFix SYSTEM "http://www.slickedit.com/dtd/vse/upcheck/1.0/hotfix.dtd">
+<HotFix Date="12/08/2020" Revision="1" Version="25.0.0" CompatibleVersions="25 24 23 22 21 22.0.2.1 22.0.1.0 22.0.0.9 21.0.3.0">
+<Description>
+&lt;b&gt;XRetrace macros&lt;/b&gt;
+&lt;hr&gt;
+
+This code provides diff region, beautify project, save/restore toolwindow layout,
+float window at x:y, save / restore bookmarks.
+&lt;p&gt;
+Tested mostly in in V21.0.1 .  Most things should work in older versions.
+&lt;p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;b&gt;show_xmenu1 :&lt;/b&gt;
+popup menu of my favourite commands including all the stuff below. 
+Accelerator keys 1/2/3 do xfloat1/2/3.
+
+&lt;li&gt;
+&lt;b&gt;xbeautify_project :&lt;/b&gt;
+beautifies all files in the active project. 
+By default it prompts with each file until you select "yes to all". 
+By default, files are automatically saved.
+
+&lt;li&gt;
+&lt;b&gt;xset_diff_region, xcompare_diff_region :&lt;/b&gt;
+Used to compare a set of lines -
+saves trekking through the diff dialog and setting up pathnames and line ranges. 
+The regions can be in the same or different buffers. 
+Use xset to assign the first region, move the cursor to the second region and
+use xcompare to compare.  xset_diff_region will use selected lines
+if there are any, otherwise it chooses 50 lines from current cursor position. 
+xcompare uses selected lines if any, otherwise compares from cursor position
+for a length equal to the number of lines in the first region, plus 20.
+
+&lt;li&gt;
+&lt;b&gt;xsearch_workspace_cur_word_now :&lt;/b&gt;
+searches the current workspace for the word at the cursor,
+bypassing the find in files dialog.
+
+&lt;li&gt;
+&lt;b&gt;xsearch_cur_word :&lt;/b&gt; opens the find in files dialog with
+word at cursor pre-selected.
+
+&lt;li&gt;
+&lt;b&gt;xfloat1/2/3 :&lt;/b&gt;
+shows floating window at position 1/2/3 with
+layout as previously set by xset_float1/2/3. 
+Data is read/ written to xuser-data.ini in the configuration folder.
+
+&lt;li&gt;
+&lt;b&gt;xsave_named_toolwindow_layout :&lt;/b&gt;
+saves layout / position of all docked and floating toolwindows. 
+Data is saved to xtoolwindow-layouts.ini in the configuration folder.
+
+&lt;li&gt;
+&lt;b&gt;xload_named_toolwindow_layout :&lt;/b&gt;
+restores layout / position of docked and floating toolwindows. 
+Data is read from xtoolwindow-layouts.ini in the configuration folder.
+
+&lt;li&gt;
+&lt;b&gt;xsave_bookmarks :&lt;/b&gt;
+saves bookmarks to a file of your choosing in a "Bookmarks"
+folder in the configuration folder.
+
+&lt;li&gt;
+&lt;b&gt;xrestore_bookmarks :&lt;/b&gt; loads bookmarks from a
+file of your choosing in a "Bookmarks" folder in the configuration folder.
+&lt;/ul&gt;
+
+&lt;p&gt;
+Plus miscellaneous explore / copy / open commands.
+&lt;p&gt;
+&lt;b&gt;SlickEdit 2018 update:&lt;/b&gt;
+xload/save named toolwindow layout (and maybe other things)
+no longer work in slick 2018.
+I won't be fixing it in the near future.
+</Description>
+
+<Contents>
+
+
+<Module Name="xmake_config_dirs.e" Load="0" Run="1"/>
+                  
+
+<Config Name="xretrace_form.e"            Path="UserMacros/xretrace/xretrace_form.e"/>
+<Config Name="xretrace_control_panel.e"   Path="UserMacros/xretrace/xretrace_control_panel.e"/>
+<Config Name="DLinkList.e"                Path="UserMacros/xretrace/DLinkList.e"/>
+<Config Name="xretrace_popup.e"           Path="UserMacros/xretrace/xretrace_popup.e"/>
+<Config Name="xretrace_scrollbar.e"       Path="UserMacros/xretrace/xretrace_scrollbar.e"/>
+<Config Name="xretrace.e"                 Path="UserMacros/xretrace/xretrace.e"/>
+<Config Name="xtemp-file-manager.e"       Path="UserMacros/xretrace/xtemp-file-manager.e"/>
+<Config Name="xxutils.e"                  Path="UserMacros/xretrace/xxutils.e"/>
+<Config Name="xblock-selection-editor.e"  Path="UserMacros/xretrace/xblock-selection-editor.e"/>
+<Config Name="xnotepad.e"                 Path="UserMacros/xretrace/xnotepad.e"/>
+<Config Name="xkeydefs.e"                 Path="UserMacros/xretrace/xkeydefs.e"/>
+<Config Name="xload-macros.e"             Path="UserMacros/xretrace/xload-macros.e"/>
+
+<Config Name="_xretrcur.bmp"                                   Path="UserMacros/xretrace/bitmaps/_xretrcur.bmp"/>
+<Config Name="_xretrinv.bmp"                                   Path="UserMacros/xretrace/bitmaps/_xretrinv.bmp"/>
+<Config Name="_xretrmod.bmp"                                   Path="UserMacros/xretrace/bitmaps/_xretrmod.bmp"/>
+<Config Name="_xretrdemod.bmp"                                 Path="UserMacros/xretrace/bitmaps/_xretrdemod.bmp"/>
+<Config Name="_xretrinv.png"                                   Path="UserMacros/xretrace/bitmaps/_xretrinv.png"/>
+<Config Name="_xretrmod.png"                                   Path="UserMacros/xretrace/bitmaps/_xretrmod.png"/>
+<Config Name="_xretrcur.png"                                   Path="UserMacros/xretrace/bitmaps/_xretrcur.png"/>
+<Config Name="_xretrdemod.png"                                 Path="UserMacros/xretrace/bitmaps/_xretrdemod.png"/>
+<Config Name="_xretrace-scrollbar-image1.png"                  Path="UserMacros/xretrace/bitmaps/_xretrace-scrollbar-image1.png"/>
+<Config Name="_xretrace-scrollbar-markup-bookmark.bmp"         Path="UserMacros/xretrace/bitmaps/_xretrace-scrollbar-markup-bookmark.bmp"/>
+<Config Name="_xretrace-scrollbar-markup-changed-bookmark.bmp" Path="UserMacros/xretrace/bitmaps/_xretrace-scrollbar-markup-changed-bookmark.bmp"/>
+<Config Name="_xretrace-scrollbar-markup-changed-line.bmp"     Path="UserMacros/xretrace/bitmaps/_xretrace-scrollbar-markup-changed-line.bmp"/>
+<Config Name="_xretrace-scrollbar-markup-old-changed-line.bmp" Path="UserMacros/xretrace/bitmaps/_xretrace-scrollbar-markup-old-changed-line.bmp"/>
+<Config Name="_xretrace-scrollbar-markup-visited-line.bmp"     Path="UserMacros/xretrace/bitmaps/_xretrace-scrollbar-markup-visited-line.bmp"/>
+<Config Name="_xretrace-scrollbar-markup-white.bmp"            Path="UserMacros/xretrace/bitmaps/_xretrace-scrollbar-markup-white.bmp"/>
+
+<Module Name="xload-macros.e"/>
+<Command Exec="xload_macros_default_path_silent"/>
+
+</Contents>
+</HotFix>
