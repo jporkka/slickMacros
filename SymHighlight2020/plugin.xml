@@ -1,0 +1,19 @@
+<options>
+	<plugin title="SymHighlights" forum_url="https://community.slickedit.com/index.php/topic,11445.0.html" min_ver="25">
+		<cat>programming
+highlight</cat>
+		<short>Provides a simple way to highlight all occurances of any word or selected text.</short>
+		<files>
+			<f n="SymDebug.e"/>
+			<f n="ColorDistance.e"/>
+			<f n="SymColors.e"/>
+			<f n="WordInfo.e"/>
+			<f n="SymHighlightMain.e"/>
+			<f n="SymHighlightApi.e"/>
+			<f n="HighlightDialog.e"/>
+			<f n="slickCompat.sh"/>
+			<f n="SymTagBindKeys.e"/>
+			<f n="plugin.xml"/>
+		</files>
+	</plugin>
+</options>
