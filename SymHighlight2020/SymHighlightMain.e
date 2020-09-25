@@ -65,7 +65,7 @@ static void clearSearchString()
     if (s_searchString != null)
     {
         s_modtimeSymHighlight += 1;
-        s_modtimeSymHighlight2 = p_LastModified + 1;
+        s_modtimeSymHighlight2 = _mdi.p_child.p_LastModified + 1;
         s_searchString = null;
     }
 }
@@ -93,7 +93,7 @@ static void createSearchString()
     }
     dbgsay("createSearchString: "s_searchString);
     s_modtimeSymHighlight += 1;
-    s_modtimeSymHighlight2 = p_LastModified + 1;
+    s_modtimeSymHighlight2 = _mdi.p_child.p_LastModified + 1;
 }
 
 static SymbolColor *getSymColorFromTag(_str &key)
@@ -220,7 +220,7 @@ SymbolColor *sym_get_symcolor_from_sym(WordInfo &sym)
 ----------------------------------------------------------------------------*/
 void sym_symtag_update_window_wrapper(_str updateMethod="sym_symtag_update_window")
 {
-    if (p_LastModified < s_modtimeSymHighlight2)
+    if (_mdi.p_child.p_LastModified < s_modtimeSymHighlight2)
     {
         execute(updateMethod);
     }
