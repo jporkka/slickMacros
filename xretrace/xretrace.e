@@ -666,10 +666,12 @@ static void update_retrace_cursor_list(boolean force_update = false)
             retrace_lower_line + ((retrace_upper_line - retrace_lower_line) >> 1),
             retrace_current_line, retrace_current_col, modified_region_line_marker_set ? RETRACE_MOD_FLAG : 0, 
             retrace_region_line_marker_window_id, force_update);
-      }
 
          add_markup_to_xbar_for_edwin(_mdi.p_child, *ptr_retrace_cursor_list_for_buffer, 
                                       *ptr_retrace_modified_lines_list_for_buffer, *ptr_bookmark_list_for_buffer);
+
+      }
+
 
    }
 

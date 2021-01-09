@@ -156,7 +156,7 @@ _command void xload_macros_dev()
        && isdirectory(def_xretrace_source_path :+ FILESEP :+ "bitmaps"  )  )  {
    }
    else
-      def_xretrace_source_path = DEFAULT_XRETRACE_PATH;
+      def_xretrace_source_path = DEFAULT_XRETRACE_PATH :+ FILESEP;
 
    _str xrp = _ChooseDirDialog("Select xretrace source folder",def_xretrace_source_path,"",CDN_PATH_MUST_EXIST);
 
@@ -169,8 +169,6 @@ _command void xload_macros_dev()
       _message_box("Folder invalid : " :+ def_xretrace_source_path);
       return;
    }
-   def_xretrace_source_path = xrp;
-   _maybe_append_filesep(def_xretrace_source_path);
    xload_macros2(true, true);
 }
 
