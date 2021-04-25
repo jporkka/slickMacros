@@ -1556,8 +1556,6 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
       same_buffer_name = ip2->buf_name;
    }
 
-   boolean got_esc = false;
-
    while (true) {
       lpos = dlist_get_distance(iter, true);
       xretrace_item * ip = (xretrace_item*)dlist_getp(iter);
@@ -1616,12 +1614,7 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
       // make numpad keys work properly
       int orig_auto_map_pad_keys=_default_option(VSOPTION_AUTO_MAP_PAD_KEYS);
       _default_option(VSOPTION_AUTO_MAP_PAD_KEYS,0);
-      double startTime;
-      if ( !got_esc )
-      {
-         startTime = (double)_time('B');
-      }
-      got_esc = false;
+      double startTime = (double)_time('B');
       _str key = get_event('N');   // refresh screen and get a key
       _str keyt = event2name(key);
       _default_option(VSOPTION_AUTO_MAP_PAD_KEYS,orig_auto_map_pad_keys);
@@ -1849,7 +1842,6 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
             iter = dlist_begin(*list_ptr);
             break;
          case 'ESC' :
-            got_esc = true;
             double curTime = (double)_time('B');
             if ( (curTime - startTime) < 500)
             {
