@@ -1556,7 +1556,6 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
       same_buffer_name = ip2->buf_name;
    }
 
-
    while (true) {
       lpos = dlist_get_distance(iter, true);
       xretrace_item * ip = (xretrace_item*)dlist_getp(iter);
