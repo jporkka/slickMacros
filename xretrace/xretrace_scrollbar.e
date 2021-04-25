@@ -1015,7 +1015,15 @@ definit()
    pic_blank_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-white.bmp@native");
 }
 
-
+/*
+ 
+ case LIST_CONTROL_TYPE:
+         dynControls[i].controlH = _create_window(OI_LIST_BOX, annotationID,
+                                                  "", 60, 0, 0, LIST_BOX_CONTROL_HEIGHT, CW_CHILD);
+         dynControls[i].controlH.p_eventtab2 = defeventtab _ul2_listbox;
+         dynControls[i].controlH.p_multi_select = MS_EXTENDED;
+         break; 
+*/
 
 
 _form xretrace_scrollbar_form {

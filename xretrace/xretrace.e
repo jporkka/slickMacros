@@ -1556,7 +1556,6 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
       same_buffer_name = ip2->buf_name;
    }
 
-   double startTime = (double)_time('B');
 
    while (true) {
       lpos = dlist_get_distance(iter, true);
@@ -1616,6 +1615,7 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
       // make numpad keys work properly
       int orig_auto_map_pad_keys=_default_option(VSOPTION_AUTO_MAP_PAD_KEYS);
       _default_option(VSOPTION_AUTO_MAP_PAD_KEYS,0);
+      double startTime = (double)_time('B');
       _str key = get_event('N');   // refresh screen and get a key
       _str keyt = event2name(key);
       _default_option(VSOPTION_AUTO_MAP_PAD_KEYS,orig_auto_map_pad_keys);
@@ -1847,10 +1847,13 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
             if ( (curTime - startTime) < 500)
             {
                // 'ESC' seems to be registering as some keypresses when first starting
-               // this event loop. Filter out any occurring in a short time from the beginning
+               // this event loop as well as after any key is hit. Filter out any occurring in a
+               // short time from the beginning as well as after any key is pressed.
                // See: https://community.slickedit.com/index.php/topic,16598.msg67541.html#msg67541
+               //      https://community.slickedit.com/index.php/topic,16598.msg71577.html#msg71577
                continue;
             }
+            //dsay("Event loop ESC return");
             // exit back where we started
             edit('+Q +BI ' :+ start_buf_id);
             message('');  // clear
