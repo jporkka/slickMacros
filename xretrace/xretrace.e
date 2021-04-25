@@ -1847,8 +1847,9 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
             {
                // 'ESC' seems to be registering as some keypresses when first starting
                // this event loop as well as after any key is hit. Filter out any occurring in a
-               // short time from the beginning as well as after any key (except ESC) is pressed.
+               // short time from the beginning as well as after any key is pressed.
                // See: https://community.slickedit.com/index.php/topic,16598.msg67541.html#msg67541
+               //      https://community.slickedit.com/index.php/topic,16598.msg71577.html#msg71577
                continue;
             }
             //dsay("Event loop ESC return");
