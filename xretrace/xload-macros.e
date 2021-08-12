@@ -6,23 +6,24 @@
 #pragma option(strictparens,on)
 
 
-#define XRETRACE_PATH def_xretrace_source_path
+#include "xretrace_not_plugin.sh"
 
-_str def_xretrace_source_path;
 
 
 static boolean       force_recompile;
-static bool          prompt_before_load;
+static boolean       prompt_before_load;
 static int           xdef_say_yes_no = 0;
 
+static boolean       load_error;
 
-_command void xmysay(_str string="")
-{
-   if (xdef_say_yes_no != 0) 
-      say(string);
-}
 
-_command boolean xload_my_module(_str module = "")
+// _command void xmysay(_str string="")
+// {
+//    if (xdef_say_yes_no != 0) 
+//       say(string);
+// }
+
+static boolean xload_my_module(_str module = "")
 {
    _str sm = strip(module, "B", '"');
    //xmysay(sm);
@@ -54,7 +55,12 @@ _command boolean xload_my_module(_str module = "")
       }
       p_window_id = origView;
    }
-   return load(module) == 0;
+   if ( load(module) != 0 ) {
+      load_error = true;
+      _message_box('Error loading ' :+ module :+ \n 'Error msg is on the cmdline');
+      return false;
+   }
+   return true;
 }
 
 
@@ -73,106 +79,88 @@ static void load_my_module2(_str module)
 }
 
 
-static void xload_macros2(bool recompile, bool xprompt)
+static void xload_macros2(boolean recompile, boolean xprompt_before_load, boolean quiet = true)
 {
-   prompt_before_load = xprompt;
+   prompt_before_load = xprompt_before_load;
    load_my_module2('');
 
-   if ( find_index('xretrace_disable', COMMAND_TYPE) != 0 ) {
-      xretrace_disable();
+   if ( find_index('xretrace_disable', COMMAND_TYPE) != 0 && is_xretrace_running()) {
+      int res = _message_box('Please shutdown xretrace (if not already) using the xretrace_disable command before loading.' \n \n :+ 'Continue?', '', MB_YESNO);
+      if (res == IDNO) {
+         load_error = true;
+         return;
+      }
    }
-   if ( find_index('delete_xbar_windows', COMMAND_TYPE) != 0 ) {
-      delete_xbar_windows();
+   if ( find_index('xretrace_delete_scrollbar_windows', COMMAND_TYPE) != 0 ) {
+      int res = _message_box('Please shutdown xretrace windows (if not already) using' \n :+ 'the xretrace_delete_scrollbar_windows command before loading.' \n \n :+ 'Continue?', '', MB_YESNO);
+      if (res == IDNO) {
+         load_error = true;
+         return;
+      }
    }
 
-   force_recompile = false;
-   if (recompile && 
+   force_recompile = recompile;
+   if (!quiet && recompile && 
        _message_box('Force source re-compile?', "xload macros", MB_YESNO) == IDYES) {
       force_recompile = true;
    };
-
-   load_my_module2(def_xretrace_source_path :+ 'DLinkList.e');
-   load_my_module2(def_xretrace_source_path :+ 'xretrace_popup.e');
-   load_my_module2(def_xretrace_source_path :+ 'xretrace_scrollbar.e');
-   load_my_module2(def_xretrace_source_path :+ 'xretrace.e');
-   load_my_module2(def_xretrace_source_path :+ 'xtemp-file-manager.e');
-   load_my_module2(def_xretrace_source_path :+ 'xxutils.e');
-   load_my_module2(def_xretrace_source_path :+ 'xblock-selection-editor.e');
-   load_my_module2(def_xretrace_source_path :+ 'xnotepad.e');
-   load_my_module2(def_xretrace_source_path :+ 'xkeydefs.e');
+   load_error = false;
+   load_my_module2(XRETRACE_PATH :+ 'DLinkList.e');
+   load_my_module2(XRETRACE_PATH :+ 'xretrace_popup.e');
+   load_my_module2(XRETRACE_PATH :+ 'xretrace_scrollbar.e');
+   load_my_module2(XRETRACE_PATH :+ 'xretrace.e');
+   load_my_module2(XRETRACE_PATH :+ 'xtemp-file-manager.e');
+   load_my_module2(XRETRACE_PATH :+ 'xxutils.e');
+   load_my_module2(XRETRACE_PATH :+ 'xblock-selection-editor.e');
+   load_my_module2(XRETRACE_PATH :+ 'xnotepad.e');
+   load_my_module2(XRETRACE_PATH :+ 'xkeydefs.e');
 }
 
 
-#define XRETRACE_BITMAPS_PATH  XRETRACE_PATH :+ "bitmaps" :+ FILESEP
 
-#define DEFAULT_XRETRACE_PATH _ConfigPath() :+ 'UserMacros' :+ FILESEP :+ 'xretrace' :+ FILESEP
-
-
-_command void xload_macros_default_path_silent()
+/*
+  This command is used to load xretrace, xxutils etc for a first installation.
+  It allows for the fact that xretrace and the xretrace scrollbar may already be running
+  and it terminates them if they are.
+  When a configuration folder is upgraded during installation of a new release of
+  slickedit, this function does not get called - but it doesn't need to be because slickedit
+  automatically copies and rebuilds any macro files that are in the configuration folder.
+*/
+_command void load_xretrace_modules()
 {
-   #if 0
-   def_xretrace_source_path = _ConfigPath();
-   _maybe_append_filesep(def_xretrace_source_path);
-   def_xretrace_source_path = def_xretrace_source_path :+ "UserMacros";
-
-   if (!isdirectory(def_xretrace_source_path)) {
-      mkdir(def_xretrace_source_path);
-      say(def_xretrace_source_path);
-   }
-   def_xretrace_source_path = def_xretrace_source_path :+ FILESEP :+ "xretrace";
-   if (!isdirectory(def_xretrace_source_path)) {
-      mkdir(def_xretrace_source_path);
-      say(def_xretrace_source_path);
-   }
-
-   _maybe_append_filesep(def_xretrace_source_path);
-   bitmapsDir := def_xretrace_source_path :+ "bitmaps";
-   if (!isdirectory(bitmapsDir)) {
-      mkdir(bitmapsDir);
-      say(bitmapsDir);
-   }
-   #endif
-
-   def_xretrace_source_path = DEFAULT_XRETRACE_PATH;
-
-   if (def_xretrace_source_path != null && isdirectory(def_xretrace_source_path)
-       && file_exists(def_xretrace_source_path :+ "xretrace.e")
-       && isdirectory(def_xretrace_source_path :+ "bitmaps"  )  )  {
-   }
-   else
-   {
-      _message_box("xretrace source folder invalid : " :+ def_xretrace_source_path);
-      return;
-   }
-
-   xload_macros2(false, false);
+   xload_macros2(true, false);
 }
 
 
-_command void xload_macros_dev()
+_command void load_xretrace_modules_with_prompt()
 {
-   if (def_xretrace_source_path != null && isdirectory(def_xretrace_source_path)
-       && file_exists(def_xretrace_source_path :+ FILESEP :+ "xretrace.e")
-       && isdirectory(def_xretrace_source_path :+ FILESEP :+ "bitmaps"  )  )  {
-   }
-   else
-      def_xretrace_source_path = DEFAULT_XRETRACE_PATH :+ FILESEP;
-
-   _str xrp = _ChooseDirDialog("Select xretrace source folder",def_xretrace_source_path,"",CDN_PATH_MUST_EXIST);
-
-   if (xrp != null && isdirectory(xrp)
-       && file_exists(xrp :+ FILESEP :+ "xretrace.e")
-       && isdirectory(xrp :+ FILESEP :+ "bitmaps"  ) ) {
-   }
-   else
-   {
-      _message_box("Folder invalid : " :+ def_xretrace_source_path);
-      return;
-   }
-   xload_macros2(true, true);
+   xload_macros2(true, true, false);
 }
 
 
+definit()
+{
+   if (arg(1)=="L") {
+      // If this is NOT an editor invocation
+
+      int res = _message_box('Load xretrace & xxutils ?' \n \n 'If you are installing a SlickEdit upgrade, you should select NO here.', '', MB_YESNO);
+      if (res != IDNO) {
+         load_xretrace_modules();
+         if ( !load_error && find_index('xretrace_show_control_panel', COMMAND_TYPE) != 0 ) {
+            xretrace_show_control_panel();
+            _message_box( 'xretrace has been successfully loaded.' \n \n:+
+                          'Use the "xretrace_options" command to set xretrace options.' \n \n :+ 
+                               'Uncheck "retrace delayed start" for normal operation.');
+         }
+      }
+      else
+      {
+         _message_box('Use the load_xretrace_modules command to load xretrace at any time.');
+      }
+   }
+}
+
+  
 /* =======================================================================================================
  
   Guide for using the above macros
@@ -187,7 +175,7 @@ _command void xload_macros_dev()
      xretrace-whatever  - load all three or none
      xtemp-file-manager is needed by xxutils but it's sort of inactive until you enable it
      xnotepad  -  is needed by xxutils
-     xblock-selection-editor - is optional
+     xblock-selection-editor - is optional  yyzz
  
  
   ********************************************************************************************************
@@ -308,7 +296,7 @@ _command void xload_macros_dev()
  
  
   ***************************************************************************************************************
-  ****                             Using xxutils, xnotepad and xblock selection editor                                                            ****
+  ****                             Using xxutils, xnotepad and xblock selection editor                       ****
   ***************************************************************************************************************
  
   Run the command show_xmenu1 to bring up the popup menu - maybe bind to a key such as Ctrl-M

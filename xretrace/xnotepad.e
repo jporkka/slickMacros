@@ -50,6 +50,10 @@ _command void xnotepad_word() name_info(',')
    xnotepad(true);
 }
 
+_command void xnotepad_create_time_date_string() name_info(',')
+{
+   xnotepad(false, stranslate(_date('I'),'-','/') :+ '-' :+ stranslate(_time('M'), '-', ':'));  
+}
 
 
 
@@ -124,10 +128,7 @@ _command xnotepad(boolean select_word = false, _str string1 = '') name_info(','M
             editorwid.top();
             editorwid.delete_line();
 
-            if ( string1 != '' ) {
-               editorwid.insert_line(string1);
-            }
-            else if ( select_type != 'LINE' ) 
+            if ( select_type != 'LINE' ) 
                editorwid.insert_line('');
 
             p_window_id = wid2;
@@ -152,9 +153,16 @@ _command xnotepad(boolean select_word = false, _str string1 = '') name_info(','M
          }
       }
       _mdi._set_focus();
-      editorwid._copy_to_cursor();
-      if (select_type == 'CHAR' || select_type == 'BLOCK') {
-         editorwid.insert_line('');
+
+      if ( string1 != '' ) {
+         editorwid.insert_line(string1);
+      }
+      else
+      {
+         editorwid._copy_to_cursor();
+         if (select_type == 'CHAR' || select_type == 'BLOCK') {
+            editorwid.insert_line('');
+         }
       }
       _str ss = editorwid.get_the_longest_line();
       editorwid.bottom();

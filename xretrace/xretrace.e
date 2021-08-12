@@ -1,20 +1,17 @@
 
-#include "slick.sh"
-
-#import 'DLinkList.e'
 
 #pragma option(strictsemicolons,on)
 #pragma option(strict,on)
 #pragma option(autodecl,off)
 #pragma option(strictparens,on)
 
-#import "xload-macros.e"
+#include "slick.sh"
+
+#import 'DLinkList.e'
+
+#include "xretrace.sh"
 
 
-#define XRETRACE_MODULE_NAME XRETRACE_PATH :+ 'xretrace.e'
-
-#define  XRETRACE_DATA_PATH  'c:/temp'
-#define  XRETRACE_USE_SUBFOLDER YES
 
 #define XRETRACE_INCLUDING
 #include "xretrace_control_panel.e"
@@ -162,7 +159,7 @@
  */
 
 
-#define XRETRACE_KEYS_HELP_LINE 144
+#define XRETRACE_KEYS_HELP_LINE 133
 #define XRETRACE_SETTINGS_HELP_LINE 174
 
 /*****************************************************************************  
@@ -271,7 +268,7 @@ struct track_demodified_line_item
 #define DEMODIFY_LF VIMARK_LF    // 0x400000
 
 // the timer must not be static
-int         retrace_timer_handle;
+int         retrace_timer_handle = -1;
 
 
 //*****************************************************************************
@@ -381,6 +378,40 @@ static dlist    buffer_retrace_modified_lines_list:[];
 static dlist    buffer_retrace_cursor_list:[]; 
 static _str     files_active_since_startup:[];
 static dlist    buffer_bookmark_list:[]; 
+
+
+static boolean    xretrace_debug = false;
+
+
+static void xdebug(...)
+{
+   if ( !xretrace_debug ) 
+      return;
+   _str s1 = "xr: ";
+   int k = 0;
+   while ( ++k <= arg()) {
+      s1 = s1 :+ arg(k) :+ ' ';
+   }
+   // https://www.epochconverter.com/
+   say(_time('G') :+ s1);
+}
+
+
+void toggle_xretrace_debug()
+{
+   if ( xretrace_debug ) {
+      xdebug("xretrace debug off");
+      xretrace_debug = false;
+   }
+   else
+   {
+      xretrace_debug = true;
+      xdebug("xretrace debug on");
+      say("Use F1 for help, Ctrl K to clear");
+   }
+}
+
+
 
 // update_retrace_line_numbers updates the recorded line number using the line
 // marker to get the latest actual line marker
@@ -531,6 +562,9 @@ static void add_new_retrace_item(dlist & alist, _str bufname, int marker_id, int
          swap_retrace_line_bitmaps(alist, retrace_line_marker_pic_index_mod_now, 1);
       }
    }
+
+   xdebug("add retrace", bufname, mid_line );
+
    // remove duplicates
    dlist_iterator iter = dlist_begin(alist);
    // if skip_dup is true we don't inspect the first item in the list because
@@ -548,6 +582,7 @@ static void add_new_retrace_item(dlist & alist, _str bufname, int marker_id, int
          if ((abs(info1.LineNum - last_line) < max_range) &&
              (ip->buf_name :== bufname)  ) {
             _LineMarkerRemove(ip->line_marker_id);
+            xdebug("remove retrace dup", bufname, info1.LineNum); 
             dlist_erase(iter);
             break alabel;
          }
@@ -591,6 +626,7 @@ static void check_and_remove_first_entry_in_retrace_cursor_list()
          return;
       if (ip->marker_id_valid && (_LineMarkerGet(ip->line_marker_id, info1) == 0)) {
          if (info1.LineNum == _mdi.p_child.p_line) {
+            xdebug("check remove first", ip->buf_name, info1.LineNum); 
             _LineMarkerRemove(ip->line_marker_id);
             dlist_erase(iter);
          }
@@ -636,7 +672,7 @@ static void update_modified_lines_list()
             retrace_modified_line, retrace_modified_col, RETRACE_MOD_FLAG | RETRACE_MOD_LIST_FLAG, 
             modified_region_line_marker_window_id);
       }
-      add_markup_to_xbar_for_edwin(_mdi.p_child, *ptr_retrace_cursor_list_for_buffer, 
+      xretrace_add_markup_to_scrollbar_for_edwin(_mdi.p_child, *ptr_retrace_cursor_list_for_buffer, 
                                    *ptr_retrace_modified_lines_list_for_buffer, *ptr_bookmark_list_for_buffer);
    }
    retrace_undo_flag = false;
@@ -653,30 +689,36 @@ static void update_retrace_cursor_list(boolean force_update = false)
           || modified_region_line_marker_set || force_update)) {
 
       retrace_region_line_marker_set = false;
+      int mid_line = retrace_lower_line + ((retrace_upper_line - retrace_lower_line) >> 1);
+
+      if ( force_update ) {
+         xretrace_item * ip;
+         dlist_iterator iter = dlist_begin(retrace_cursor_list);
+         if ( dlist_iter_valid(iter) ) {
+            ip = dlist_getp(iter);
+            if ( ip->buf_name :== retrace_current_buf_name && ip->mid_line == mid_line ) {
+               // the current line is already on the list so no force
+               xdebug("#$* is this a bug", mid_line, retrace_current_buf_name);
+               force_update = false;
+            }
+         }
+      }
 
       add_new_retrace_item(
-         retrace_cursor_list, retrace_current_buf_name, retrace_region_line_marker_id,
-         retrace_lower_line + ((retrace_upper_line - retrace_lower_line) >> 1),
+         retrace_cursor_list, retrace_current_buf_name, retrace_region_line_marker_id, mid_line,
          retrace_current_line, retrace_current_col, modified_region_line_marker_set ? RETRACE_MOD_FLAG : 0, 
          retrace_region_line_marker_window_id, force_update);
 
       if ( ptr_retrace_cursor_list_for_buffer ) {
          add_new_retrace_item(
-            * ptr_retrace_cursor_list_for_buffer, retrace_current_buf_name, buffer_retrace_region_line_marker_id,
-            retrace_lower_line + ((retrace_upper_line - retrace_lower_line) >> 1),
+            * ptr_retrace_cursor_list_for_buffer, retrace_current_buf_name, buffer_retrace_region_line_marker_id, mid_line,
             retrace_current_line, retrace_current_col, modified_region_line_marker_set ? RETRACE_MOD_FLAG : 0, 
             retrace_region_line_marker_window_id, force_update);
 
-         add_markup_to_xbar_for_edwin(_mdi.p_child, *ptr_retrace_cursor_list_for_buffer, 
+         xretrace_add_markup_to_scrollbar_for_edwin(_mdi.p_child, *ptr_retrace_cursor_list_for_buffer, 
                                       *ptr_retrace_modified_lines_list_for_buffer, *ptr_bookmark_list_for_buffer);
-
       }
-
-
    }
-
-
-
    retrace_cursor_min_region_pause_time_counter = (int)xcfg.retrace_cursor_min_region_pause_time;
    retrace_cursor_min_line_pause_time_counter = (int)xcfg.retrace_cursor_min_line_pause_time;
 }
@@ -973,7 +1015,7 @@ static void save_retrace_data_for_file(_str fn)
    }
 
    if ( file_exists(*active)) {
-      if (_open_temp_view(_maybe_quote_filename(*active), new_wid, orig_wid) == 0)  {
+      if (_open_temp_view(maybe_quote_filename(*active), new_wid, orig_wid) == 0)  {
          top();
          get_line(s1);
          if ( s1 == 'xretrace rev 001' ) {
@@ -1140,7 +1182,7 @@ static void create_new_file_k(_str fn)
 {
    int new_wid, orig_wid;
    boolean was;
-   if (_open_temp_view(_maybe_quote_filename(fn), new_wid, orig_wid, '', was, true, false, 0, true) == 0)
+   if (_open_temp_view(maybe_quote_filename(fn), new_wid, orig_wid, '', was, true, false, 0, true) == 0)
    {
       insert_line('xretrace rev 001');
 
@@ -1168,7 +1210,7 @@ static void read_file_k_part1(_str fn)
    dlist_reset(* ptr_retrace_modified_lines_list_for_buffer);
    dlist_reset(* ptr_bookmark_list_for_buffer);
 
-   if (_open_temp_view(_maybe_quote_filename(fn), new_wid, orig_wid) == 0)
+   if (_open_temp_view(maybe_quote_filename(fn), new_wid, orig_wid) == 0)
    {
       if ( read_file_k_part2() )
       {
@@ -1245,7 +1287,7 @@ static void buffer_switch_setup_buffer_retrace_lists()
       if ( !file_exists(name2) ) {
          // create and open
          make_path(xretrace_data_path);
-         if (_open_temp_view(_maybe_quote_filename(name2), new_wid, orig_wid, '', was, true, false, 0, true) == 0)
+         if (_open_temp_view(maybe_quote_filename(name2), new_wid, orig_wid, '', was, true, false, 0, true) == 0)
          {
             insert_line('xretrace rev 001');
             insert_line('Total 1');
@@ -1261,7 +1303,7 @@ static void buffer_switch_setup_buffer_retrace_lists()
          }
       }
       else {
-         if (_open_temp_view(_maybe_quote_filename(name2), new_wid, orig_wid) == 0)
+         if (_open_temp_view(maybe_quote_filename(name2), new_wid, orig_wid) == 0)
          {
             _str s1, fc;
             top();
@@ -1343,14 +1385,14 @@ void maintain_cursor_retrace_history()
    if ( _no_child_windows() || !xretrace_history_enabled ) 
       return;
 
-   // update_xbar_forms returns a non zero value if there is an xretrace scrollbar that doesn't have markup yet
-   int edwin = update_xbar_forms();
+   // xretrace_update_scrollbar_forms returns a non zero value if there is an xretrace scrollbar that doesn't have markup yet
+   int edwin = xretrace_update_scrollbar_forms();
    if ( edwin > 0 ) {
       // edwin.p_buf_name might not be the current active editor window
       dlist * ptr2_retrace_cursor_list_for_buffer = buffer_retrace_cursor_list._indexin(edwin.p_buf_name);
       dlist * ptr2_retrace_modified_lines_list_for_buffer = buffer_retrace_modified_lines_list._indexin(edwin.p_buf_name);
       if ( ptr2_retrace_cursor_list_for_buffer && ptr2_retrace_modified_lines_list_for_buffer ) {
-         add_markup_to_xbar_for_edwin(edwin, *ptr2_retrace_cursor_list_for_buffer, 
+         xretrace_add_markup_to_scrollbar_for_edwin(edwin, *ptr2_retrace_cursor_list_for_buffer, 
                                       *ptr2_retrace_modified_lines_list_for_buffer, *ptr_bookmark_list_for_buffer);
       }
    }
@@ -1421,7 +1463,7 @@ void maintain_cursor_retrace_history()
 
       buffer_switch_setup_buffer_retrace_lists();
       //say("yyy2 " :+ _mdi.p_child.p_buf_name);
-      add_markup_to_xbar_for_edwin(_mdi.p_child, *ptr_retrace_cursor_list_for_buffer, 
+      xretrace_add_markup_to_scrollbar_for_edwin(_mdi.p_child, *ptr_retrace_cursor_list_for_buffer, 
                                    *ptr_retrace_modified_lines_list_for_buffer, *ptr_bookmark_list_for_buffer);
       return;
    } 
@@ -1486,6 +1528,7 @@ _command void xretrace_disable() name_info(',')
    restore_demodified_lineflags_in_buffer();
    xretrace_clear_all_markers();
    xretrace_not_running = true;
+   xretrace_has_been_started_id = 0;
 }
 
 
@@ -1556,13 +1599,20 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
       same_buffer_name = ip2->buf_name;
    }
 
+
    while (true) {
       lpos = dlist_get_distance(iter, true);
       xretrace_item * ip = (xretrace_item*)dlist_getp(iter);
       if (ip->marker_id_valid && _LineMarkerGet(ip->line_marker_id, info1) == 0)
+      {
          xline = info1.LineNum;
+         xdebug("step, marker valid", xline);
+      }
       else
+      {
          xline = ip->last_line;
+         xdebug("step, marker invalid", xline);
+      }
 
       if (first_time && !list_selector) {
          // modified lines list.  If the current line is the first item in the list
@@ -1596,11 +1646,11 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
       retrace_current_buf_name = _mdi.p_child.p_buf_name;
       buffer_switch_setup_buffer_retrace_lists();
       //say("yyy2 " :+ _mdi.p_child.p_buf_name);
-      add_markup_to_xbar_for_edwin(_mdi.p_child, *ptr_retrace_cursor_list_for_buffer, 
+      xretrace_add_markup_to_scrollbar_for_edwin(_mdi.p_child, *ptr_retrace_cursor_list_for_buffer, 
                                    *ptr_retrace_modified_lines_list_for_buffer, *ptr_bookmark_list_for_buffer);
 
       if (one_shot) {
-         message(msg :+ lpos :+ '/' :+ dlist_size(*list_ptr) :+ ' : ' :+ strip_filename(_mdi.p_child.p_buf_name,'DP'));
+         message(msg :+ lpos :+ '/' :+ dlist_size(*list_ptr) :+ ' : ' :+ strip_filename(_mdi.p_child.p_buf_name,'DP') :+ ' ' :+ xline);
          return;
       }
 
@@ -1612,12 +1662,18 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
       message(msg :+ lpos :+ '/' :+ dlist_size(*list_ptr) :+ ' : ' :+ strip_filename(_mdi.p_child.p_buf_name,'DP'));
 
       // make numpad keys work properly
+      #if __VERSION__  >=  22
       int orig_auto_map_pad_keys=_default_option(VSOPTION_AUTO_MAP_PAD_KEYS);
       _default_option(VSOPTION_AUTO_MAP_PAD_KEYS,0);
+      #endif
+
       double startTime = (double)_time('B');
       _str key = get_event('N');   // refresh screen and get a key
       _str keyt = event2name(key);
+      #if __VERSION__  >=  22
       _default_option(VSOPTION_AUTO_MAP_PAD_KEYS,orig_auto_map_pad_keys);
+      #endif
+
       switch (keyt) {
          case 'HOME' :
             // go back to the beginning
@@ -1802,6 +1858,7 @@ static void retrace_steps_event_loop2(boolean list_selector, int popup_wid, bool
                            }
                            iter = save_iter;
                            break;
+
                         }
                         continue;
                      }
@@ -1927,7 +1984,6 @@ static boolean check_xretrace_is_running()
 {
    if (xretrace_not_running) {
       if (_message_box('xretrace is not running.'\r'Start xretrace now?', "xretrace", MB_YESNO) == IDYES) {
-         xretrace_not_running = false;
          init_xretrace();
          message('xretrace is running.');
          return false;
@@ -2044,11 +2100,13 @@ _command void xretrace_cursor() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_ED
       //check_and_remove_first_entry_in_retrace_cursor_list();
       //xretrace_cursor_fwd_back_state = 0; 
       
+      xdebug("retrace cursor fwd");
       xretrace_cursor_fwd(); 
       return;
    }
    // always force where we are now onto the retrace list so we can go back to
    // exactly where we were each time this command is used
+   xdebug("retrace cursor alternate");
    update_retrace_cursor_list(true);
    retrace_steps_event_loop(true, -1, true);
 }
@@ -2114,13 +2172,16 @@ _command void xretrace_cursor_fwd() name_info(',')
       xretrace_cursor_fwd_back_state = 0;
       return;
    }
+   xdebug("cursor fwd");
    if (xretrace_cursor_fwd_back_state > 0) {
       if (!dlist_prev(fwd_back_iter)) {
          xretrace_cursor_fwd_back_state = 0;
+         xdebug("cursor fwd set zero");
          return;
       }
       retrace_steps_event_loop2(true, -1, true, fwd_back_iter);
       if (dlist_iterator_at_start(fwd_back_iter)) {
+         xdebug("cursor fwd remove first");
          check_and_remove_first_entry_in_retrace_cursor_list();
          xretrace_cursor_fwd_back_state = 0;
          return;
@@ -2229,10 +2290,8 @@ static void retrace_timer_callback1()
    if (_no_child_windows() || !xretrace_history_enabled) {
       retrace_startup_counter = 0;
       return;
-   }
-   else if (retrace_current_buf_id != _mdi.p_child.p_buf_id ||
-            retrace_current_buf_name != _mdi.p_child.p_buf_name)
-   {
+   } else if (retrace_current_buf_id != _mdi.p_child.p_buf_id ||
+              retrace_current_buf_name != _mdi.p_child.p_buf_name) {
       retrace_current_buf_id = _mdi.p_child.p_buf_id;
       retrace_current_buf_name = _mdi.p_child.p_buf_name;
       if (++retrace_startup_counter < 20) 
@@ -2242,10 +2301,10 @@ static void retrace_timer_callback1()
    retrace_current_col = _mdi.p_child.p_col;
    set_retrace_region_line_marker();
    check_buffer_ignore();
-   _kill_timer(retrace_timer_handle);
+   xretrace_kill_timer();
    retrace_timer_handle = _set_timer(retrace_timer_rate, retrace_timer_callback2);
    buffer_switch_setup_buffer_retrace_lists();
-   add_markup_to_xbar_for_edwin(_mdi.p_child, *ptr_retrace_cursor_list_for_buffer, 
+   xretrace_add_markup_to_scrollbar_for_edwin(_mdi.p_child, *ptr_retrace_cursor_list_for_buffer, 
                                 *ptr_retrace_modified_lines_list_for_buffer, *ptr_bookmark_list_for_buffer);
 }
 
@@ -2309,7 +2368,8 @@ void init_xretrace()
    xretrace_has_been_started_id = XRETRACE_HAS_BEEN_STARTED_ID;
 
    retrace_option_clear_modify_continually = false;
-   retrace_option_land_on_line_clear_modify = true;
+
+   retrace_option_land_on_line_clear_modify = (xcfg.no_touch_line_modify_flag == 0);
 
    retrace_cursor_min_region_pause_time_counter = 1;
    previous_number_of_lines_in_buffer = number_of_lines_in_buffer = 0;
@@ -2326,9 +2386,16 @@ void init_xretrace()
    retrace_timer_handle = _set_timer(retrace_timer_rate, retrace_timer_callback1);
    xretrace_not_running = false;
 
-   retrace_line_marker_pic_index_cur = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ '_xretrcur.png@native'); 
-   retrace_line_marker_pic_index_mod = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ '_xretrmod.png@native'); 
-   retrace_line_marker_pic_index_demod = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ '_xretrdemod.png@native'); 
+   #if __VERSION__  >=  23
+   #define ADD_NATIVE :+ "@native"
+   #else
+   #define ADD_NATIVE 
+   #endif
+
+   retrace_line_marker_pic_index_cur = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ '_xretrcur.png'  ADD_NATIVE); 
+   retrace_line_marker_pic_index_mod = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ '_xretrmod.png'  ADD_NATIVE); 
+   retrace_line_marker_pic_index_demod = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ '_xretrdemod.png'  ADD_NATIVE); 
+
    //retrace_line_marker_pic_index_inv = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ '_xretrinv.png'); 
    retrace_line_marker_pic_index_inv = 0;
 
@@ -2439,6 +2506,12 @@ _command void xretrace_kill_timer() name_info(',')
 }
 
 
+boolean is_xretrace_running()
+{
+   return (xretrace_has_been_started_id == XRETRACE_HAS_BEEN_STARTED_ID) && !xretrace_not_running;
+}
+
+
 _command void xretrace_clear_all_markers() name_info(',')
 {
    if (xretrace_has_been_started_id == XRETRACE_HAS_BEEN_STARTED_ID) {
@@ -2468,11 +2541,25 @@ void _on_load_module_xretrace(_str module_name)
 }
 
 
+// xretrace-xxutils-help.pdf
+
 void show_xretrace_options_help()
 {
-   edit(maybe_quote_filename(XRETRACE_MODULE_NAME));
-   goto_line(XRETRACE_SETTINGS_HELP_LINE);
+   //shell( get_env('SystemRoot') :+ '\explorer.exe /n,/e,/select,' :+ XRETRACE_PATH :+ 'xretrace-xxutils-help.pdf', 'A' );
 
+   filename := XRETRACE_PATH :+ "xretrace-xxutils-help.pdf";
+   cmd := "";
+   if (_isWindows()) {
+      cmd = 'start';
+   } else if (_isLinux()) {
+      cmd = 'xdg-open';
+   } else {
+      cmd = 'open';
+   }
+   rc := shell(cmd' '_maybe_quote_filename(filename));
+
+   //edit(maybe_quote_filename(XRETRACE_MODULE_NAME));
+   //goto_line(XRETRACE_SETTINGS_HELP_LINE);
 }
 
 
@@ -2538,10 +2625,9 @@ void xretrace_remove_bookmark_for_buffer(_str filename, int line)
 
 definit()
 {
-   //myerror();
+   xretrace_load_config();
    if (arg(1)=="L") {
       //If this is NOT an editor invocation
-      xretrace_load_config();
       xretrace_kill_timer();
        //buffer_history_suspend = true;
       // this shouldn't be necessary because _on_load_module does it
@@ -2550,12 +2636,16 @@ definit()
       buffer_retrace_modified_lines_list._makeempty();
       buffer_bookmark_list._makeempty();
    }
+   else
+   {
+      xretrace_debug = false;
+   }
+
    files_active_since_startup._makeempty();
    retrace_no_re_entry = 0;
    goback_is_loaded = false;
    if (def_xretrace_no_delayed_start && !file_exists(_ConfigPath() :+ 'DontRunMyMacros.txt')) {
       init_xretrace();
-      xretrace_not_running = false;
    } else {
       xretrace_not_running = true;
       xretrace_has_been_started_id = 0;
@@ -2563,25 +2653,12 @@ definit()
 }
 
 
-// _command void close_and_load_xbar() name_info(',')
-// {
-//    int wid = p_window_id;
-//    int k;
-//    xretrace_disable();
-//    delete_xbar_windows();
-//    p_window_id = wid;
-//    force_load('xbar1.e');
-//    //execute('show_tool_window -current-mdi xbar1');
-//    init_xretrace();
-// }
 
 _command void show_xretrace_scrollbar() name_info(',')
 {
    execute('show_tool_window -current-mdi xretrace_scrollbar_form');
 }
 
-  
-  
-  
 
+   
 

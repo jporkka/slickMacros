@@ -101,7 +101,7 @@
 // =============================================================================================================*/
 
 // the timer must be global
-int               xtemp_list_maintain_timer;
+int               xtemp_list_maintain_timer = -1;
 
 static dlist      xtemp_files_list;
 
@@ -114,6 +114,7 @@ static boolean    xtemp_wkspace_has_been_closed;
 static _str       remember_temp_files_from_workspace[];
 static boolean    xtemp_list_active;
 static _str       xtemp_files_path;
+static boolean    xtemp_have_asked = false;
 
 
 // define an environment variable xtemp_files_path OR change the #define below
@@ -154,9 +155,10 @@ _command _str xtemp_new_temporary_file(boolean nokeep = false, _str aprefix = 'D
                       MB_OK);
    }
    
-   if ( !xtemp_list_active ) {
+   if ( !xtemp_list_active && !xtemp_have_asked ) {
+      xtemp_have_asked = true;
       if (_message_box('xtemp file handler is not running.'\n'Start it now?', "xtemp file handler", MB_YESNO) == IDYES) {
-         start_xtemp_files_handler();
+         start_xtemp_files_manager();
          message('xtemp file handler is running.');
       };
    }
@@ -309,11 +311,14 @@ void _workspace_opened_handle_xtemp_files()
 // which has the effect of closing the nokeep files when a workspace is opened or when slick starts.
 int xtemp_add_file_to_list()
 {
+   //say("check add " :+ xtemp_files_path  :+ "yy" FILESEP);
    if ( pos(xtemp_files_path, p_buf_name )) {
       _str fn2 = strip_filename(p_buf_name, 'PDE');
+      //say(fn2);
       if ( substr(fn2,1,length(NOKEEP_PREFIX)) != NOKEEP_PREFIX ) {
          _str s1 = p_buf_name;
          dlist_push_back(xtemp_files_list, s1);
+         //say("adding");
       }
    }
    return 0;
@@ -330,11 +335,12 @@ static void xtemp_regenerate_temporary_files_list()
 // xtemp_list_maintain_callback fires every 2 seconds
 static void xtemp_list_maintain_callback()
 {
-   _kill_timer(xtemp_list_maintain_timer);
+   kill_xtemp_timer();
    if ( !xtemp_list_active ) {
+      //say("not firing");
       return;
    }
-
+   //say("firing");
    if ( xtemp_wkspace_has_been_opened ) {
       xtemp_wkspace_has_been_opened = false;
       xtemp_wkspace_has_been_closed = false;
@@ -362,21 +368,22 @@ static void xtemp_list_maintain_callback()
 }
 
 
-_command void start_xtemp_files_handler() name_info(',')
+_command void start_xtemp_files_manager() name_info(',')
 {
    if ( !xtemp_list_active ) {
-      _kill_timer(xtemp_list_maintain_timer);
+      kill_xtemp_timer();
       xtemp_list_active = true;
       xtemp_load_temporary_file_list();
       xtemp_wkspace_has_been_closed = false;
       xtemp_list_maintain_timer = _set_timer(500, xtemp_list_maintain_callback);
+      //say("timer started");
    }
 }
 
-_command void stop_xtemp_files_handler() name_info(',')
+_command void stop_xtemp_files_manager() name_info(',')
 {
    if ( xtemp_list_active ) {
-      _kill_timer(xtemp_list_maintain_timer);
+      kill_xtemp_timer();
       xtemp_list_active = false;
       xtemp_wkspace_has_been_opened = false;
       xtemp_wkspace_has_been_closed = false;
@@ -386,7 +393,7 @@ _command void stop_xtemp_files_handler() name_info(',')
 
 _command void xtemp_kill_maintain_timer() name_info(',')
 {
-   _kill_timer(xtemp_list_maintain_timer);
+   kill_xtemp_timer();
 }
 
 static void start_xtemp_list_maintain_timer()
@@ -445,6 +452,7 @@ static void xtemp_save_file_list_to_disk()
    _str filename = XTEMP_FILE_LIST_FILENAME;
    tempView := 0;
    origView := 0;
+   //say("saving");
    boolean was_open;
    // _open_temp_view creates the file if it doesn't exist or wipes it if it does
    status := _open_temp_view(filename, tempView, origView, "", was_open, true, false, 0, true);
@@ -453,6 +461,7 @@ static void xtemp_save_file_list_to_disk()
       dlist_iterator iter = dlist_begin(xtemp_files_list);
       for ( ; dlist_iter_valid(iter); dlist_next(iter)) {
          insert_line(*dlist_getp(iter));
+         //say(*dlist_getp(iter));
       }
       _save_file('+O');
       _delete_temp_view(tempView);
@@ -744,6 +753,15 @@ _command void set_grep_mode() name_info(',')
 }
  
 #endif
+
+
+static void kill_xtemp_timer()
+{
+   if ( xtemp_list_maintain_timer != -1 ) {
+      _kill_timer(xtemp_list_maintain_timer);
+      xtemp_list_maintain_timer = -1;
+   }
+}
  
 
 definit()
@@ -758,12 +776,12 @@ definit()
       set_env('xtemp_files_path', TEMP_FILES_PATH);
       xtemp_files_path = TEMP_FILES_PATH;
    }
-   xtemp_files_path :+= FILESEP;
+   //xtemp_files_path :+= FILESEP;
    
    if ( arg(1) == 'L' ) {
-      _kill_timer(xtemp_list_maintain_timer);
+      kill_xtemp_timer();
    }
-   xtemp_list_active = false;
+   stop_xtemp_files_manager();
 
    #if 0
    int index = find_index("_grep_menu_default", oi2type(OI_MENU));

@@ -1,10 +1,19 @@
 #include "slick.sh"
 #import "se/ui/toolwindow.sh"
 
+#include "xretrace.sh"
+
+// #ifndef XRETRACE_IS_PLUGIN
+// #import "xload-macros.e"
+// #endif
+
 #import "DLinkList.e"
 #import "xretrace.e"
-#import "xload-macros.e"
+
+
 defeventtab xretrace_scrollbar_form;
+
+//namespace user_graeme;
 
  
 struct xbar_form_data {
@@ -21,17 +30,17 @@ struct xbar_form_data {
    int listbox_row_associated_line_number[];
 };
  
-int pic_visited_line;
-int pic_changed_line;
-int pic_old_changed_line;
-int pic_bookmark_line;
-int pic_blank_line;
-int pic_scrollbar_image;
-int pic_changed_and_bookmarked_line;
+static int pic_visited_line;
+static int pic_changed_line;
+static int pic_old_changed_line;
+static int pic_bookmark_line;
+static int pic_blank_line;
+static int pic_scrollbar_image;
+static int pic_changed_and_bookmarked_line;
 
-boolean xbar_update_needed;  // global for all xbar forms
+static boolean xbar_update_needed;  // global for all xbar forms
 
-xbar_form_data xbar_forms[];
+static xbar_form_data xbar_forms[];
 
 #define GRAY 0X00A8A8A8
 #define INACTIVE_SCROLLBAR_HANDLE_COLOUR 0X00EE62BD
@@ -43,16 +52,16 @@ xbar_form_data xbar_forms[];
 // }
 
 
-int def_say_yes_no = 0;
-int xrs_def_say_yes_no = 0;
-
-_command void mysay(_str string="")
-{
-   if ( def_say_yes_no || xrs_def_say_yes_no ) {
-      say(string);
-   }
-   return;
-}
+//int def_say_yes_no = 0;
+//int xrs_def_say_yes_no = 0;
+//
+//_command void mysay(_str string="")
+//{
+//   if ( def_say_yes_no || xrs_def_say_yes_no ) {
+//      say(string);
+//   }
+//   return;
+//}
 
 
 
@@ -154,7 +163,7 @@ static void process_right_mouse_click(int wid, int edwin, int formid)
 }
 
 
-void set_scrollbar_handle_location_from_curr_line(int wid, int editor_wid)
+static void set_scrollbar_handle_location_from_curr_line(int wid, int editor_wid)
 {
    _control scrollbar_image;
    _control scrollbar_handle_image;
@@ -180,7 +189,7 @@ void set_scrollbar_handle_location_from_curr_line(int wid, int editor_wid)
 
 #define PIXELS_PER_LISTBOX_LINE 6
 
-void set_control_sizes(int wid, int k)
+static void set_control_sizes(int wid, int k)
 {
    _control ctllist1;
    _control scrollbar_image;
@@ -225,7 +234,7 @@ static int GetEditorCtlWid(int wid)
 }
 
 
-void set_edwin_current_line_from_cursor_y(int wid, int edwin)
+static void set_edwin_current_line_from_cursor_y(int wid, int edwin)
 {
    _control scrollbar_image;
    int nlines = edwin.p_Noflines;
@@ -334,7 +343,7 @@ static int find_nearest_marker(int formid, int wid)
 // _IsKeyDown(CTRL)
 
 
-int run_xrs_event_loop(boolean lbutton = false)
+static int run_xrs_event_loop(boolean lbutton = false)
 {
    _control scrollbar_handle_image;
    _control current_line_image;
@@ -502,7 +511,7 @@ int run_xrs_event_loop(boolean lbutton = false)
    }
    //mysay("halfway");
    exit_event_loop = false;
-   update_xbar_forms(true);
+   xretrace_update_scrollbar_forms(true);
 
    while (!exit_event_loop) {
       _str event = get_event();
@@ -518,7 +527,7 @@ int run_xrs_event_loop(boolean lbutton = false)
       }
       int mx = xbar_wid.scrollbar_image.mou_last_x();
       int mynow = xbar_wid.scrollbar_image.mou_last_y();
-      update_xbar_forms(true);
+      xretrace_update_scrollbar_forms(true);
       switch (event) {
       default:
          mou_mode(0);
@@ -729,7 +738,7 @@ scrollbar_image.lbutton_down()
 }
 
 
-int find_xbar_form_from_wid(int wid)
+static int find_xbar_form_from_wid(int wid)
 {
    int k;
    for ( k = 0; k < xbar_forms._length(); ++k  ) {
@@ -742,7 +751,7 @@ int find_xbar_form_from_wid(int wid)
 
 // 
 
-int register_xbar_form(int wid)
+static int register_xbar_form(int wid)
 {
    int k = find_xbar_form_from_wid(wid);
    if ( k < 0 ) {
@@ -855,9 +864,9 @@ static void add_markup_from_list(dlist & alist, int bitmap, int edwin, int formi
 }
 
 
-// add_markup_to_xbar_for_edwin is called from xretrace timer callback when an xretrace 
+// xretrace_add_markup_to_scrollbar_for_edwin is called from xretrace timer callback when an xretrace 
 // list changes and at startup.  It re-generates the markup for the specified edit window.
-void add_markup_to_xbar_for_edwin(int edwin, dlist & visited_list, dlist & changed_list, dlist & bookmark_list)
+void xretrace_add_markup_to_scrollbar_for_edwin(int edwin, dlist & visited_list, dlist & changed_list, dlist & bookmark_list)
 {
    _control ctllist1;
 
@@ -904,21 +913,21 @@ void add_markup_to_xbar_for_edwin(int edwin, dlist & visited_list, dlist & chang
 }
 
 
-void check_update_xretrace_scrollbar()
+static void check_update_xretrace_scrollbar()
 {
    if ( _no_child_windows()  ) 
       return;
 
-   // update_xbar_forms returns a non zero value if there is an xretrace scrollbar that doesn't have markup yet
-   int edwin = update_xbar_forms();
+   // xretrace_update_scrollbar_forms returns a non zero value if there is an xretrace scrollbar that doesn't have markup yet
+   int edwin = xretrace_update_scrollbar_forms();
 }
 
 
-// update_xbar_forms is called from xretrace timer callback - maintain_cursor_retrace_history - on 
+// xretrace_update_scrollbar_forms is called from xretrace timer callback - maintain_cursor_retrace_history - on 
 // every callback - default rate is every 250 ms.
 // it deletes an xbar form when needed and updates the position of the scrollbar handle
 // return value is positive window ID if an xbar form needs markup added
-int update_xbar_forms(boolean event_loop = false)
+int xretrace_update_scrollbar_forms(boolean event_loop = false)
 {
    _control scrollbar_handle_image;
    int no_markup_wid = -1;
@@ -986,7 +995,7 @@ int update_xbar_forms(boolean event_loop = false)
 //}
 
 
-_command void delete_xbar_windows() name_info(',')
+_command void xretrace_delete_scrollbar_windows() name_info(',')
 {
    for ( k = 0; k < xbar_forms._length(); ++k ) {
       if ( xbar_forms[k].wid > 0 ) {
@@ -1005,25 +1014,22 @@ definit()
    xbar_forms._makeempty();
    //}
 
-   pic_scrollbar_image = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-image1.png@native");
+   #if __VERSION__  >=  23
+   #define ADD_NATIVE :+ "@native"
+   #else
+   #define ADD_NATIVE 
+   #endif
 
-   pic_bookmark_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-bookmark.bmp@native");
-   pic_changed_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-changed-line.bmp@native");
-   pic_changed_and_bookmarked_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-changed-bookmark.bmp@native");
-   pic_old_changed_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-old-changed-line.bmp@native");
-   pic_visited_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-visited-line.bmp@native");
-   pic_blank_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-white.bmp@native");
+   pic_scrollbar_image = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-image1.png"  ADD_NATIVE);
+
+   pic_bookmark_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-bookmark.bmp"  ADD_NATIVE);
+   pic_changed_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-changed-line.bmp"  ADD_NATIVE);
+   pic_changed_and_bookmarked_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-changed-bookmark.bmp"  ADD_NATIVE);
+   pic_old_changed_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-old-changed-line.bmp"  ADD_NATIVE);
+   pic_visited_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-visited-line.bmp"  ADD_NATIVE);
+   pic_blank_line = _find_or_add_picture(XRETRACE_BITMAPS_PATH :+ "_xretrace-scrollbar-markup-white.bmp"  ADD_NATIVE);
 }
 
-/*
- 
- case LIST_CONTROL_TYPE:
-         dynControls[i].controlH = _create_window(OI_LIST_BOX, annotationID,
-                                                  "", 60, 0, 0, LIST_BOX_CONTROL_HEIGHT, CW_CHILD);
-         dynControls[i].controlH.p_eventtab2 = defeventtab _ul2_listbox;
-         dynControls[i].controlH.p_multi_select = MS_EXTENDED;
-         break; 
-*/
 
 
 _form xretrace_scrollbar_form {
@@ -1120,30 +1126,30 @@ _menu xretrace_scrollbar_popup_menu {
 
 
 
-int def_scroll_up_with_cursor;
+int xretrace_def_scroll_up_with_cursor;
 static int scroll_up_with_cursor_key_bindings;
-bool block_scroll_flag;
+static boolean block_scroll_flag;
 
-void my_scroll_callback()
+void xretrace_scroll_callback()
 {
    block_scroll_flag = false;
 }
 
 
-void xscroll(bool is_up)
+static void xscroll(boolean is_up)
 {
-   bool xrs = false;
-   bool try_call_key = false;
+   boolean xrs = false;
+   boolean try_call_key = false;
    _str ev;
    if ( block_scroll_flag ) {
       return;
    }
 
-   if ( find_index('delete_xbar_windows', COMMAND_TYPE) != 0 ) {
+   if ( find_index('xretrace_delete_scrollbar_windows', COMMAND_TYPE) != 0 ) {
       xrs = true;
    }
 
-   if ( def_scroll_up_with_cursor && !_IsKeyDown(SHIFT) || _IsKeyDown(CTRL) ) {
+   if ( xretrace_def_scroll_up_with_cursor && !_IsKeyDown(SHIFT) || _IsKeyDown(CTRL) ) {
       if ( p_window_id != null && _iswindow_valid(p_window_id) && p_window_id._isEditorCtl()) {
 
          if ( substr(p_window_id.p_buf_name, 1, 1) == "." ) {
@@ -1187,7 +1193,7 @@ void xscroll(bool is_up)
                try_call_key = true;
                break;
             case RBUTTON_DOWN :
-               toggle_xscroll();
+               xretrace_toggle_xscroll();
                break;
             case ESC :
                restore_pos(p2);
@@ -1216,7 +1222,7 @@ void xscroll(bool is_up)
          }
          //center_line();
          block_scroll_flag = true;
-         _set_timer(500, my_scroll_callback);
+         _set_timer(500, xretrace_scroll_callback);
          if ( try_call_key ) {
             call_key(ev);
          }
@@ -1227,13 +1233,13 @@ void xscroll(bool is_up)
 }
 
 
-_command void xscroll_up() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
+_command void xretrace_scroll_up() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
 {
    xscroll(true);
 }
 
 
-_command void xscroll_down() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
+_command void xretrace_scroll_down() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
 {
    xscroll(false);
 }
@@ -1244,19 +1250,19 @@ _command void xscroll_down() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITO
 
 
 
-_command void toggle_xscroll(bool force_xscroll_off = false) name_info(',')
+_command void xretrace_toggle_xscroll(boolean force_xscroll_off = false) name_info(',')
 {
    if ( force_xscroll_off ) {
       execute('bind-to-key -r fast_scroll 'event2index(name2event('WHEEL-UP')),"");
       execute('bind-to-key -r fast_scroll 'event2index(name2event('WHEEL-DOWN')),"");
       return;
    }
-   if ( def_scroll_up_with_cursor == 0 ) {
+   if ( xretrace_def_scroll_up_with_cursor == 0 ) {
       if (_message_box('Enable scroll with cursor', "", MB_YESNO) != IDYES)  {
          message("Cursor scrolling is disabled");
          return;
       }
-      def_scroll_up_with_cursor = 1;
+      xretrace_def_scroll_up_with_cursor = 1;
       scroll_up_with_cursor_key_bindings = 1;  // bind to xscroll
    }
    scroll_up_with_cursor_key_bindings = (int)!scroll_up_with_cursor_key_bindings;
@@ -1267,8 +1273,8 @@ _command void toggle_xscroll(bool force_xscroll_off = false) name_info(',')
       message("Bind to fast-scroll");
    }
    else {
-      execute('bind-to-key -r xscroll_up 'event2index(name2event('WHEEL-UP')),"");
-      execute('bind-to-key -r xscroll_down 'event2index(name2event('WHEEL-DOWN')),"");
+      execute('bind-to-key -r xretrace_scroll_up 'event2index(name2event('WHEEL-UP')),"");
+      execute('bind-to-key -r xretrace_scroll_down 'event2index(name2event('WHEEL-DOWN')),"");
       message("Bind to xscroll");
    }
 }

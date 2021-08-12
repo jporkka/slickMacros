@@ -3,31 +3,34 @@
 *  $Revision: 1.1 $                                                            
 ******************************************************************************/
 
-#ifndef XRETRACE_INCLUDING
+#ifdef XRETRACE_INCLUDING
+
+// XRETRACE_INCLUDING is used to prevent the plugin mechanism from loading this
+// module as an independent module
+
 
 // this module is normally #INCLUDEd by xretrace.e (I think the reason for this
 // was because access to xretrace_config_data didn't work reliably at startup
 // when they were separate modules.)
 
-#include "slick.sh"
+// #include "slick.sh"
+// 
+// 
+// #pragma option(strictsemicolons,on)
+// #pragma option(strict,on)
+// #pragma option(autodecl,off)
+// #pragma option(strictparens,on)
+// 
+// 
+// 
 
-
-#pragma option(strictsemicolons,on)
-#pragma option(strict,on)
-#pragma option(autodecl,off)
-#pragma option(strictparens,on)
-
-#endif
-
-
-#include "xretrace_form.e"
+#include "xretrace_form.sh"
 
 defeventtab xretrace_form;
 
 boolean def_xretrace_no_delayed_start;
 
 
-#define XRETRACE_VERSION 'V1_00'
 
 //_control ctlsstab1;
 _control ctlframe1;
@@ -50,6 +53,7 @@ _control retrace_cursor_min_line_pause_time_textbox;
 _control retrace_delayed_start_checkbox;
 _control track_modified_lines_checkbox;
 _control capture_retrace_data_to_disk_checkbox;
+_control no_touch_line_modify_flag_checkbox;
 
 _control disable_button;
 _control dump_cursor_retrace_button;
@@ -86,6 +90,7 @@ struct xretrace_config
    _str buffer_retrace_modified_max_items;
    _str buffer_retrace_bookmarks_max_items;
    int capture_retrace_data_to_disk;
+   int no_touch_line_modify_flag;
    int dummy;
 };
 
@@ -156,6 +161,8 @@ static void item_name(int what, xretrace_config * config_ptr, typeless val, _str
    MAKE_CONFIG_FUNC(buffer_retrace_bookmarks_max_items, p_active_form.buffer_retrace_bookmarks_max_items_textbox.p_text, '4', _str)
 
    MAKE_CONFIG_FUNC(capture_retrace_data_to_disk, p_active_form.capture_retrace_data_to_disk_checkbox.p_value, 0, int)
+   MAKE_CONFIG_FUNC(no_touch_line_modify_flag, p_active_form.no_touch_line_modify_flag_checkbox.p_value, 1, int)
+
 
    // items added to this list should also be added to call_config_funcs below
 
@@ -185,7 +192,7 @@ static call_config_funcs(int what, xretrace_config * config_ptr, typeless val = 
    CALL(buffer_retrace_modified_max_items, val);
    CALL(buffer_retrace_bookmarks_max_items, val);
    CALL(capture_retrace_data_to_disk, val);
-
+   CALL(no_touch_line_modify_flag, val);
 
 }
 
@@ -314,6 +321,12 @@ _command void xretrace_show_control_panel() name_info(',')
 }
 
 
+_command void xretrace_options() name_info(',')
+{
+   show('-XY xretrace_form');
+}
+
+
 void track_demodified_lines_with_line_markers_checkbox.lbutton_up()
 {
    xretrace_clear_all_demodified_line_markers();
@@ -386,6 +399,19 @@ void help_button.lbutton_up()
    show_xretrace_options_help();
 }
 
+void ctlcommand_reset.lbutton_up()
+{
+   if (_message_box('Reset xretrace lists & clear markers?', "xretrace", MB_YESNO) == IDYES)
+      xretrace_reset();
+}
+
+
+void ctlcommand_debug.lbutton_up()
+{
+   toggle_xretrace_debug();
+}
+
+
 //void ctlsstab1.on_change(int reason)
 //{
 //   xretrace_config_data.show_most_recent_modified_line_markers = 1;
@@ -405,4 +431,6 @@ void help_button.lbutton_up()
 //}
 
 
+
+#endif
 
