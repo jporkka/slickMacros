@@ -1,5 +1,6 @@
 #include "slick.sh"
 #include "tagsdb.sh"
+#include "xretrace.sh"
 
 #pragma option(strictsemicolons,on)
 //#pragma option(strict,on)
@@ -8,7 +9,7 @@
 
 
 
-static boolean    xxutils_debug = false;
+static bool    xxutils_debug = false;
 
 
 static void xxdebug(...)
@@ -43,9 +44,9 @@ _command toggle_xxutils_debug()
 
 static int diff_region1_start_line;
 static int diff_region1_end_line;
-static boolean diff_region1_set;
+static bool diff_region1_set;
 static _str diff_region1_filename;
-static boolean diff_region1_auto_length;
+static bool diff_region1_auto_length;
    
 _command void run_typora() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
 {
@@ -129,12 +130,12 @@ _command void xcompare_diff_region() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIR
 
       _DiffModal('-range1:' :+ diff_region1_start_line ',' :+ diff_region1_end_line :+ 
                  ' -range2:' :+ diff_region2_start_line ',' :+ diff_region2_end_line :+ ' ' :+ 
-                 maybe_quote_filename(diff_region1_filename) ' '  maybe_quote_filename(p_buf_name));
+                 _maybe_quote_filename(diff_region1_filename) ' '  _maybe_quote_filename(p_buf_name));
    }
 }
    
 
-_command void xbeautify_project(boolean ask = true, boolean no_preview = false, boolean autosave = true) name_info(',')
+_command void xbeautify_project(bool ask = true, bool no_preview = false, bool autosave = true) name_info(',')
 {
    _str files_to_beautify [];
 
@@ -424,9 +425,37 @@ _command void xopen_logs() name_info(',')
 }
 
 
+static void show_xretrace_xxutils_help()
+{
+   //shell( get_env('SystemRoot') :+ '\explorer.exe /n,/e,/select,' :+ XRETRACE_PATH :+ 'xretrace-xxutils-help.pdf', 'A' );
+
+   filename := XRETRACE_PATH :+ "xretrace-xxutils-help.pdf";
+   cmd := "";
+   if (_isWindows()) {
+      cmd = 'start';
+   } else if (_isLinux()) {
+      cmd = 'xdg-open';
+   } else {
+      cmd = 'open';
+   }
+   rc := shell(cmd' '_maybe_quote_filename(filename));
+
+   //edit(_maybe_quote_filename(XRETRACE_MODULE_NAME));
+   //goto_line(XRETRACE_SETTINGS_HELP_LINE);
+}
+
+
+
 _command void xxutils_help() name_info(',')
 {
-   show_xretrace_options_help();
+   //int xx1 = find_index("show_xretrace_xxutils_help", PROC_TYPE);
+   //if ( index_callable(xx1) ) {
+   //   show_xretrace_xxutils_help();
+   //}
+   //else
+   //   _message_box("xretrace must be loaded to see xxutils help");
+
+   show_xretrace_xxutils_help();
 }
 
 _menu xmenu1 {
@@ -571,7 +600,7 @@ static int restore_bookmarks_from_file(_str filename)
   
 static int save_all_bookmarks_to_file(_str &filename)
 {
-   boolean b2;
+   bool b2;
    int new_wid, orig_wid;
    _str line;
    int rest;
@@ -1148,7 +1177,7 @@ _command void xappend_word_to_clipboard() name_info(','VSARG2_READ_ONLY|VSARG2_R
    append_to_clipboard();
 }
 
-static boolean IsGotoNextBuffer=true;
+static bool IsGotoNextBuffer=true;
 _command void alternate_buffers() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_READ_ONLY)
 {
    if (IsGotoNextBuffer) {
@@ -1239,7 +1268,7 @@ _command int diff2,diff_last_two_buffers() name_info(',' VSARG2_REQUIRES_EDITORC
       result = diff();
       return(result);
    }
-   result = diff(maybe_quote_filename(last_buffer)" "maybe_quote_filename(second_last_buffer));
+   result = diff(_maybe_quote_filename(last_buffer)" "_maybe_quote_filename(second_last_buffer));
    return(result);
 }
 
@@ -1260,14 +1289,18 @@ _command show_xmenu1() name_info(',')
 
 
 
-static boolean is_wordchar(_str s1)
+static bool is_wordchar(_str s1)
 {
+   return _clex_is_identifier_char(s1);
+
    //return isalnum(s1) || (s1=='_');
-   return pos('['p_word_chars']',s1,1,'R') > 0;
+   //return pos('['p_word_chars']',s1,1,'R') > 0;
+
+   // _clex_identifier_chars   _clex_is_identifier_char
 }
 
 
-static boolean is_whitespace(_str s1)
+static bool is_whitespace(_str s1)
 {
    return (s1==' ') || (s1==\n) || (s1==\t) || (s1==\r) ;
 }
@@ -1275,10 +1308,10 @@ static boolean is_whitespace(_str s1)
 
 /* xcursor_to_next_token_stop_on_all
    - skips whitespace,
-   - stops at start and end of a word,
+   - stops at start of a word,
    - stops on any other non whitespace char
 */
-_command void xcursor_to_next_token_stop_on_all() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
+_command void xcursor_to_next_token_stop_on_all() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    int lim = 0;
    if ( is_wordchar(get_text()) ) {
@@ -1306,12 +1339,13 @@ _command void xcursor_to_next_token_stop_on_all() name_info(','VSARG2_READ_ONLY|
 }
 
 
+
 /* xcursor_to_prev_token_stop_on_all
    - skips whitespace,
-   - stops at start and end of a word,
+   - stops at start of a word,
    - stops on any other non whitespace char
 */
-_command void xcursor_to_prev_token_stop_on_all() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
+_command void xcursor_to_prev_token_stop_on_all() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    int lim = 0;
    cursor_left();
@@ -1336,10 +1370,11 @@ _command void xcursor_to_prev_token_stop_on_all() name_info(','VSARG2_READ_ONLY|
 
 
 
+
 /* xcursor_to_next_token
    - stops at start and end of a word
 */
-_command void xcursor_to_next_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
+_command void xcursor_to_next_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    int lim = 0;
    if ( is_wordchar(get_text()) ) {
@@ -1360,10 +1395,32 @@ _command void xcursor_to_next_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUI
 }
 
 
+// This works too
+// _command void xcursor_to_next_token2() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
+// {
+//    already_looping := _MultiCursorAlreadyLooping();
+//    multicursor := !already_looping && _MultiCursor();
+//    for (ff:=true;;ff=false) {
+//       if (_MultiCursor()) {
+//          if (!_MultiCursorNext(ff)) {
+//             break;
+//          }
+//       }
+//       xcursor_to_next_token();
+//       if (!multicursor) {
+//          if (!already_looping) _MultiCursorLoopDone();
+//          break;
+//       }
+//    }
+// }
+
+
+
+
 /* xcursor_to_prev_token
    - stops at start and end of a word
 */
-_command void xcursor_to_prev_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
+_command void xcursor_to_prev_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    int lim = 0;
    cursor_left();
@@ -1387,18 +1444,39 @@ _command void xcursor_to_prev_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUI
 }
 
 
-_command void xselect_to_next_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
+// This works too
+//_command void xcursor_to_prev_token2() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
+//{
+//   already_looping := _MultiCursorAlreadyLooping();
+//   multicursor := !already_looping && _MultiCursor();
+//   for (ff:=true;;ff=false) {
+//      if (_MultiCursor()) {
+//         if (!_MultiCursorNext(ff)) {
+//            break;
+//         }
+//      }
+//      xcursor_to_prev_token();
+//      if (!multicursor) {
+//         if (!already_looping) _MultiCursorLoopDone();
+//         break;
+//      }
+//   }
+//}
+
+
+_command void xselect_to_next_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK|VSARG2_MULTI_CURSOR)
 {
    _select_char();
-   xcursor_to_next_token();
+   xcursor_to_next_token();  // this function also has VSARG2_MULTI_CURSOR
    _select_char();
 }
 
 
-_command void xselect_to_prev_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
+
+_command void xselect_to_prev_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK|VSARG2_MULTI_CURSOR)
 {
    _select_char();
-   xcursor_to_prev_token();
+   xcursor_to_prev_token();  // this function also has VSARG2_MULTI_CURSOR
    _select_char();
 }
 
@@ -1491,7 +1569,7 @@ _command void xfind_prev_whole_word_at_cursor() name_info(','VSARG2_READ_ONLY|VS
 }
 
 
-static boolean xquick_direction_is_fwd;
+static bool xquick_direction_is_fwd;
 
 _command void xquick_search() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
 {
@@ -1574,7 +1652,7 @@ _command void xquick_reverse_search() name_info(','VSARG2_READ_ONLY|VSARG2_REQUI
 }
 
 
-_command void xdelete_next_token(boolean leave_a_space = true) name_info(','VSARG2_REQUIRES_EDITORCTL)
+_command void xdelete_next_token(bool leave_a_space = true) name_info(','VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    _deselect();
    if (is_wordchar(get_text())) {
@@ -1601,7 +1679,7 @@ _command void xdelete_next_token(boolean leave_a_space = true) name_info(','VSAR
  
 
 
-_command void xdelete_prev_token() name_info(','VSARG2_REQUIRES_EDITORCTL)
+_command void xdelete_prev_token() name_info(','VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    _deselect();
    _select_char();
