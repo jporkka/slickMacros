@@ -84,20 +84,16 @@ static void xload_macros2(boolean recompile, boolean xprompt_before_load, boolea
    prompt_before_load = xprompt_before_load;
    load_my_module2('');
 
-   if ( find_index('xretrace_disable', COMMAND_TYPE) != 0 && is_xretrace_running()) {
-      int res = _message_box('Please shutdown xretrace (if not already) using the xretrace_disable command before loading.' \n \n :+ 'Continue?', '', MB_YESNO);
-      if (res == IDNO) {
-         load_error = true;
-         return;
-      }
+   int xx1 = find_index('xretrace_disable', COMMAND_TYPE);
+   if (index_callable(xx1)) {
+      xretrace_disable();
    }
-   if ( find_index('xretrace_delete_scrollbar_windows', COMMAND_TYPE) != 0 ) {
-      int res = _message_box('Please shutdown xretrace windows (if not already) using' \n :+ 'the xretrace_delete_scrollbar_windows command before loading.' \n \n :+ 'Continue?', '', MB_YESNO);
-      if (res == IDNO) {
-         load_error = true;
-         return;
-      }
-   }
+
+   xx1 = find_index('xretrace_delete_scrollbar_windows', COMMAND_TYPE);
+   if (index_callable(xx1)) {
+      xretrace_delete_scrollbar_windows();
+   } 
+
 
    force_recompile = recompile;
    if (!quiet && recompile && 
@@ -118,6 +114,24 @@ static void xload_macros2(boolean recompile, boolean xprompt_before_load, boolea
 
 
 
+static void xretrace_check_for_load_error()
+{
+   if ( !load_error ) {
+      int xx1 = find_index('xretrace_show_control_panel', COMMAND_TYPE);
+         if ( index_callable(xx1) ) {
+            xretrace_show_control_panel();
+            _message_box( 'xretrace has been successfully loaded.' \n \n:+
+                          'Use the "xretrace_options" command to set xretrace options.' \n \n :+ 
+                               'Uncheck "retrace delayed start" for normal operation.');
+            return;
+         }
+   }
+
+   _message_box( 'xretrace did not load correctly.' \n \n:+
+                 'Check the <user config>/logs folder for error logs'   ); 
+
+}
+
 /*
   This command is used to load xretrace, xxutils etc for a first installation.
   It allows for the fact that xretrace and the xretrace scrollbar may already be running
@@ -126,40 +140,43 @@ static void xload_macros2(boolean recompile, boolean xprompt_before_load, boolea
   slickedit, this function does not get called - but it doesn't need to be because slickedit
   automatically copies and rebuilds any macro files that are in the configuration folder.
 */
-_command void load_xretrace_modules()
+_command void xxutils_xretrace_load()
 {
    xload_macros2(true, false);
+   xretrace_check_for_load_error();
 }
 
 
-_command void load_xretrace_modules_with_prompt()
+_command void xxutils_xretrace_load_with_prompt()
 {
    xload_macros2(true, true, false);
+   xretrace_check_for_load_error();
 }
 
 
-definit()
-{
-   if (arg(1)=="L") {
-      // If this is NOT an editor invocation
 
-      int res = _message_box('Load xretrace & xxutils ?' \n \n 'If you are installing a SlickEdit upgrade, you should select NO here.', '', MB_YESNO);
-      if (res != IDNO) {
-         load_xretrace_modules();
-         if ( !load_error && find_index('xretrace_show_control_panel', COMMAND_TYPE) != 0 ) {
-            xretrace_show_control_panel();
-            _message_box( 'xretrace has been successfully loaded.' \n \n:+
-                          'Use the "xretrace_options" command to set xretrace options.' \n \n :+ 
-                               'Uncheck "retrace delayed start" for normal operation.');
-         }
-      }
-      else
-      {
-         _message_box('Use the load_xretrace_modules command to load xretrace at any time.');
-      }
-   }
-}
-
+//definit()
+//{
+//   if (arg(1)=="L") {
+//      // If this is NOT an editor invocation
+//
+//      int res = _message_box('Load xretrace & xxutils ?' \n \n 'If you are installing a SlickEdit upgrade, you should select NO here.', '', MB_YESNO);
+//      if (res != IDNO) {
+//         load_xretrace_modules();
+//         if ( !load_error && find_index('xretrace_show_control_panel', COMMAND_TYPE) != 0 ) {
+//            xretrace_show_control_panel();
+//            _message_box( 'xretrace has been successfully loaded.' \n \n:+
+//                          'Use the "xretrace_options" command to set xretrace options.' \n \n :+ 
+//                               'Uncheck "retrace delayed start" for normal operation.');
+//         }
+//      }
+//      else
+//      {
+//         _message_box('Use the load_xretrace_modules command to load xretrace at any time.');
+//      }
+//   }
+//}
+//
   
 /* =======================================================================================================
  

@@ -2646,6 +2646,7 @@ definit()
    goback_is_loaded = false;
    if (def_xretrace_no_delayed_start && !file_exists(_ConfigPath() :+ 'DontRunMyMacros.txt')) {
       init_xretrace();
+      init_xretrace();
    } else {
       xretrace_not_running = true;
       xretrace_has_been_started_id = 0;

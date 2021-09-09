@@ -9,7 +9,11 @@
 
 
 
-static bool    xxutils_debug = false;
+#if __VERSION__ < 25
+#define bool boolean
+#endif
+
+static boolean    xxutils_debug = false;
 
 
 static void xxdebug(...)
