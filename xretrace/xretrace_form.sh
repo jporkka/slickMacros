@@ -6,7 +6,7 @@
 _form xretrace_form {
    p_backcolor=0x80000005;
    p_border_style=BDS_DIALOG_BOX;
-   p_caption="Xretrace  V2.01  Control Panel";
+   p_caption="Xretrace  V2.10  Control Panel";
    p_forecolor=0x80000008;
    p_height=6412;
    p_width=9744;
@@ -588,9 +588,16 @@ _form xretrace_form {
       p_x=4648;
       p_y=5026;
    }
+   _command_button error_log_button {
+      p_auto_size=false;
+      p_cancel=false;
+      p_caption="See error log";
+      p_default=false;
+      p_height=406;
+      p_tab_index=13;
+      p_tab_stop=true;
+      p_width=1344;
+      p_x=1680;
+      p_y=5586;
+   }
 }
-
-
-
-
-

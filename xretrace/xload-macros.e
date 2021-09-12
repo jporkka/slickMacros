@@ -8,13 +8,20 @@
 
 #include "xretrace_not_plugin.sh"
 
+#if __VERSION__ < 25
+#undef bool
+#define bool boolean
+#undef _maybe_quote_filename
+#define _maybe_quote_filename  maybe_quote_filename 
+#endif
 
 
-static boolean       force_recompile;
-static boolean       prompt_before_load;
+
+static bool       force_recompile;
+static bool       prompt_before_load;
 static int           xdef_say_yes_no = 0;
 
-static boolean       load_error;
+static bool       load_error;
 
 
 // _command void xmysay(_str string="")
@@ -23,7 +30,7 @@ static boolean       load_error;
 //       say(string);
 // }
 
-static boolean xload_my_module(_str module = "")
+static bool xload_my_module(_str module = "")
 {
    _str sm = strip(module, "B", '"');
    //xmysay(sm);
@@ -39,7 +46,7 @@ static boolean xload_my_module(_str module = "")
       }
    }
 
-   boolean was_open = false;
+   bool was_open = false;
    int tempView = 0;
    int origView = 0;
    if ( force_recompile ) {
@@ -66,7 +73,7 @@ static boolean xload_my_module(_str module = "")
 
 static void load_my_module2(_str module)
 {
-   static boolean more;
+   static bool more;
    if (module == '') {
       more = true;
       return;
@@ -79,7 +86,8 @@ static void load_my_module2(_str module)
 }
 
 
-static void xload_macros2(boolean recompile, boolean xprompt_before_load, boolean quiet = true)
+
+static void xload_macros2(bool recompile, bool xprompt_before_load, bool quiet = true)
 {
    prompt_before_load = xprompt_before_load;
    load_my_module2('');
@@ -101,15 +109,11 @@ static void xload_macros2(boolean recompile, boolean xprompt_before_load, boolea
       force_recompile = true;
    };
    load_error = false;
-   load_my_module2(XRETRACE_PATH :+ 'DLinkList.e');
-   load_my_module2(XRETRACE_PATH :+ 'xretrace_popup.e');
    load_my_module2(XRETRACE_PATH :+ 'xretrace_scrollbar.e');
    load_my_module2(XRETRACE_PATH :+ 'xretrace.e');
    load_my_module2(XRETRACE_PATH :+ 'xtemp-file-manager.e');
-   load_my_module2(XRETRACE_PATH :+ 'xxutils.e');
    load_my_module2(XRETRACE_PATH :+ 'xblock-selection-editor.e');
-   load_my_module2(XRETRACE_PATH :+ 'xnotepad.e');
-   load_my_module2(XRETRACE_PATH :+ 'xkeydefs.e');
+   load_my_module2(XRETRACE_PATH :+ 'xxutils.e');
 }
 
 
@@ -154,29 +158,6 @@ _command void xxutils_xretrace_load_with_prompt()
 }
 
 
-
-//definit()
-//{
-//   if (arg(1)=="L") {
-//      // If this is NOT an editor invocation
-//
-//      int res = _message_box('Load xretrace & xxutils ?' \n \n 'If you are installing a SlickEdit upgrade, you should select NO here.', '', MB_YESNO);
-//      if (res != IDNO) {
-//         load_xretrace_modules();
-//         if ( !load_error && find_index('xretrace_show_control_panel', COMMAND_TYPE) != 0 ) {
-//            xretrace_show_control_panel();
-//            _message_box( 'xretrace has been successfully loaded.' \n \n:+
-//                          'Use the "xretrace_options" command to set xretrace options.' \n \n :+ 
-//                               'Uncheck "retrace delayed start" for normal operation.');
-//         }
-//      }
-//      else
-//      {
-//         _message_box('Use the load_xretrace_modules command to load xretrace at any time.');
-//      }
-//   }
-//}
-//
   
 /* =======================================================================================================
  
@@ -291,9 +272,9 @@ _command void xxutils_xretrace_load_with_prompt()
   buffer_retrace_bookmarks_max_items      - max items to show on the scrollbar for local bookmarks
  
   There are three commands associated with the scrollbar - these apply to the current buffer only
-  next_buffer_visited_line       - cycles thru visited lines
-  next_buffer_modified_line      - cycles thru modified lines, if none, thru visited lines
-  next_buffer_bookmark           - cycles through the bookmarks shown on the scrollbar, if none, cycles
+  xretrace_next_buffer_visited_line       - cycles thru visited lines
+  xretrace_next_buffer_modified_line      - cycles thru modified lines, if none, thru visited lines
+  xretrace_next_buffer_bookmark           - cycles through the bookmarks shown on the scrollbar, if none, cycles
                                    thru modified lines, if none, thru visited lines
  
  

@@ -1,5 +1,5 @@
 
 some instructions are here
 
-https://community.slickedit.com/index.php/topic,16598.msg64005.html#msg64005
+https://community.slickedit.com/index.php/topic,18320.0.html
 

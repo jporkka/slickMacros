@@ -7,11 +7,22 @@
 //#pragma option(autodecl,off)
 #pragma option(strictparens,on)
 
+#define   DLINKLIST_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
+
 #include "tagsdb.sh"
 #import "tagwin.e"
-#import 'DLinkList.e'
 
-#define MY_NAME 'xtemp-file-manager.ex'
+#if __VERSION__ < 25
+#undef bool
+#define bool boolean
+#undef _maybe_quote_filename
+#define _maybe_quote_filename  maybe_quote_filename
+#endif
+
+#include 'DLinkList.esh'
+
+#define MY_NAME 'xtemp_file_manager.ex'
+
 
 
 /* =============================================================================================================
@@ -23,7 +34,7 @@
 // 
 // This code provides commands for creating temporary text files and uses a 2 second timer callback function to
 // maintain the list of temporary files.  This utility can also be used for files that you want to remain open
-// across workspace open / close operations.  Any file that is placed in the TEMP_FILES_PATH folder is subject
+// across workspace open / close operations.  Any file that is placed in the XTEMP_FILES_PATH folder is subject
 // to the attempts of this tool to keep them open across workspace open / close.  This is achieved by
 // remembering the list of "temporary" files that were open before a workspace is closed followed by the closing
 // of any "temporary" files when a workspace is opened, followed by the re-opening of the original list of
@@ -42,12 +53,12 @@
 // currently open temporary files is stored in a file 'AA_xtemporary_file_list.txt' in the temporary files folder.
 // 
 // If you want the temporary files to be in a fixed place independent of the configuration folder,
-// change TEMP_FILES_PATH as needed. 
+// change XTEMP_FILES_PATH as needed. 
 // Use single quotes. e.g.
 //
-// #define TEMP_FILES_PATH 'C:\Users\someone\xtemporary_files' :+ FILESEP
+// #define XTEMP_FILES_PATH 'C:\Users\someone\xtemporary_files' :+ FILESEP
 // or
-// #define TEMP_FILES_PATH  _ConfigPath() :+ 'xtemporary_files' :+  FILESEP
+// #define XTEMP_FILES_PATH  _ConfigPath() :+ 'xtemporary_files' :+  FILESEP
 // 
 // 
 // The utility tries to keep the current list of open temporary files independently of workspaces so when a
@@ -102,26 +113,26 @@
 
 // the timer must be global
 int               xtemp_list_maintain_timer = -1;
+bool              xtemp_list_active = false;
 
 static dlist      xtemp_files_list;
 
-static boolean    xtemp_ignore_cbquit;
+static bool    xtemp_ignore_cbquit;
 static _str       xtemp_remember_first_file;
-static boolean    xtemp_list_regenerate_needed;
-static boolean    xtemp_wkspace_has_been_opened;
-static boolean    xtemp_wkspace_has_been_closed;
+static bool    xtemp_list_regenerate_needed;
+static bool    xtemp_wkspace_has_been_opened;
+static bool    xtemp_wkspace_has_been_closed;
 
 static _str       remember_temp_files_from_workspace[];
-static boolean    xtemp_list_active;
 static _str       xtemp_files_path;
-static boolean    xtemp_have_asked = false;
+static bool    xtemp_have_asked = false;
 
 
 // define an environment variable xtemp_files_path OR change the #define below
-#define TEMP_FILES_PATH  _ConfigPath() :+ 'xtemporary_files' :+  FILESEP
+#define XTEMP_FILES_PATH  _ConfigPath() :+ 'xtemporary_files' :+  FILESEP
 
 // if you want the temporary files to be in a fixed place independent of the configuration folder,
-// change TEMP_FILES_PATH as needed. 
+// change XTEMP_FILES_PATH as needed. 
 
 
 #define NOKEEP_PREFIX  'NoKeep-'
@@ -136,13 +147,13 @@ static boolean    xtemp_have_asked = false;
 
 
 
-_command _str xtemp_new_temporary_file_no_keep(_str ext = '.txt', boolean quiet = false, boolean just_get_name = false) name_info(',')
+_command _str xtemp_new_temporary_file_no_keep(_str ext = '.txt', bool quiet = false, bool just_get_name = false) name_info(',')
 {
    return xtemp_new_temporary_file(true, '', ext, quiet, just_get_name);
 }
 
 
-_command _str xtemp_new_temporary_file(boolean nokeep = false, _str aprefix = 'DA-', _str ext = '.txt', boolean quiet = false, boolean just_get_name = false) name_info(',')
+_command _str xtemp_new_temporary_file(bool nokeep = false, _str aprefix = 'DA-', _str ext = '.txt', bool quiet = false, bool just_get_name = false) name_info(',')
 {
    xtemp_list_regenerate_needed = true;
    if ( nokeep ) {
@@ -151,7 +162,7 @@ _command _str xtemp_new_temporary_file(boolean nokeep = false, _str aprefix = 'D
    _str xpath = xtemp_files_path;
    if (!path_exists(xpath)) {
       if (make_path(xpath) != 0)
-         _message_box('Invalid path : ' :+ xpath :+ \n 'Set environment variable xtemp_files_path or #define TEMP_FILES_PATH', 
+         _message_box('Invalid path : ' :+ xpath :+ \n 'Set environment variable xtemp_files_path or #define XTEMP_FILES_PATH', 
                       MB_OK);
    }
    
@@ -164,8 +175,8 @@ _command _str xtemp_new_temporary_file(boolean nokeep = false, _str aprefix = 'D
    }
 
    _str index_filename = xpath :+ 'AA-index.txt';
-   boolean already_exists = file_exists(index_filename);
-   boolean was_open = false;
+   bool already_exists = file_exists(index_filename);
+   bool was_open = false;
    tempView := 0;
    origView := 0;
    // _open_temp_view creates the file if it doesn't exist
@@ -205,7 +216,7 @@ _command _str xtemp_new_temporary_file(boolean nokeep = false, _str aprefix = 'D
          _delete_temp_view(tempView);
          p_window_id = origView;
          if ( !just_get_name ) {
-            edit(maybe_quote_filename(target_filename));
+            edit(_maybe_quote_filename(target_filename));
             bottom();
          }
          return target_filename;
@@ -372,10 +383,11 @@ _command void start_xtemp_files_manager() name_info(',')
 {
    if ( !xtemp_list_active ) {
       kill_xtemp_timer();
-      xtemp_list_active = true;
+       xtemp_list_active = true;
       xtemp_load_temporary_file_list();
       xtemp_wkspace_has_been_closed = false;
       xtemp_list_maintain_timer = _set_timer(500, xtemp_list_maintain_callback);
+      message("xtemp started");
       //say("timer started");
    }
 }
@@ -387,6 +399,7 @@ _command void stop_xtemp_files_manager() name_info(',')
       xtemp_list_active = false;
       xtemp_wkspace_has_been_opened = false;
       xtemp_wkspace_has_been_closed = false;
+      message("xtemp stopped");
    }
 }
 
@@ -410,7 +423,7 @@ static void xtemp_load_temporary_files_from_list()
    for ( ; dlist_iter_valid(iter); dlist_next(iter)) {
       _str fn = * dlist_getp(iter);
       if ( file_exists(fn) ) {
-         edit( maybe_quote_filename(fn));
+         edit( _maybe_quote_filename(fn));
       }
    }
 }
@@ -453,7 +466,7 @@ static void xtemp_save_file_list_to_disk()
    tempView := 0;
    origView := 0;
    //say("saving");
-   boolean was_open;
+   bool was_open;
    // _open_temp_view creates the file if it doesn't exist or wipes it if it does
    status := _open_temp_view(filename, tempView, origView, "", was_open, true, false, 0, true);
    if ( !status ) {
@@ -487,7 +500,7 @@ int xtemp_maybe_discard_file()
 }
 
 
-static boolean is_this_a_nokeep_file(_str fn)
+static bool is_this_a_nokeep_file(_str fn)
 {
    if ( pos(xtemp_files_path, fn )) {
       _str fn2 = strip_filename(fn, 'PDE');
@@ -531,8 +544,22 @@ void _on_load_module_xtemp_files(_str module_name)
 {
    _str sm = strip(module_name, "B", "\'\"");
    if (strip_filename(sm, 'PD') == MY_NAME) {
-      //say('on load kill');
+      dsay("xtemp fm on-load - time " :+ _time('G'), "xretrace");
+      xtemp_list_active = false;
       xtemp_kill_maintain_timer();
+   }
+}
+
+
+// kill the timer, clear markers and release resources
+void _on_unload_module_xtemp_files(_str module_name)
+{
+   _str sm = strip(module_name, "B", "\'\"");
+   if (_strip_filename(sm, 'PD') == MY_NAME) {
+      xtemp_list_active = false;
+      xtemp_kill_maintain_timer();
+      dsay("xtemp fm on-unload - time " :+ _time('G'), "xretrace");
+      // https://www.epochconverter.com/
    }
 }
 
@@ -566,7 +593,7 @@ _command void XSHOW_SEARCH_CONTEXT_FUNCTION() name_info(',')
    //close_and_delete_nokeep_buffers();   
 
    // open the search results in an edit window - see grep_command_menu() 's' option
-   //edit('+q +b 'maybe_quote_filename(bufn), EDIT_NOADDHIST);
+   //edit('+q +b '_maybe_quote_filename(bufn), EDIT_NOADDHIST);
 
    _str target_filename = xtemp_new_temporary_file_no_keep('.gcs', true, true);
    if ( target_filename == '' ) {
@@ -578,10 +605,10 @@ _command void XSHOW_SEARCH_CONTEXT_FUNCTION() name_info(',')
 
    // open the ".search" buffer again and save it with a new name  - this preserves the 
    // search highlighting and the +- show/hide markers in the left gutter
-   edit('+q +b 'maybe_quote_filename(bufn), EDIT_NOADDHIST);
+   edit('+q +b '_maybe_quote_filename(bufn), EDIT_NOADDHIST);
    if (save_as('+ftext ' :+ target_filename) == 0) 
    {
-      edit('+q +b 'maybe_quote_filename(bufn), EDIT_NOADDHIST);
+      edit('+q +b '_maybe_quote_filename(bufn), EDIT_NOADDHIST);
       quit();
 
       edit('+ftext ' :+ target_filename, EDIT_NOADDHIST);
@@ -632,7 +659,7 @@ _command void xadd_context_to_search_results() name_info(',')
    _str blank1 = "";
    _str sep2 = "---------------------------------------- ";
    _str sep3 = " ----------------------------------------------------------------";
-   boolean skipf = true;
+   bool skipf = true;
 
    _str sr = p_buf_name;
    search_results_first_filename = '';
@@ -773,15 +800,19 @@ definit()
 
    xtemp_files_path = get_env('xtemp_files_path');
    if ( xtemp_files_path == '' ) {
-      set_env('xtemp_files_path', TEMP_FILES_PATH);
-      xtemp_files_path = TEMP_FILES_PATH;
+      set_env('xtemp_files_path', XTEMP_FILES_PATH);
+      xtemp_files_path = XTEMP_FILES_PATH;
    }
-   //xtemp_files_path :+= FILESEP;
    
+   xtemp_list_active = false;
    if ( arg(1) == 'L' ) {
+      // this is a reload
       kill_xtemp_timer();
    }
-   stop_xtemp_files_manager();
+   else
+   {
+      xtemp_list_maintain_timer = -1;
+   }
 
    #if 0
    int index = find_index("_grep_menu_default", oi2type(OI_MENU));

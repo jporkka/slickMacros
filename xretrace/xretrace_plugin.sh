@@ -2,7 +2,7 @@
 // xretrace_plugin.sh is copied to xretrace.sh when packaging the xretrace plugin
 #define XRETRACE_IS_PLUGIN yes
 
-#define XRETRACE_VERSION '2.0'
+#define XRETRACE_VERSION '2.10'
 
 #define XRETRACE_PATH "plugin://user_graeme.xretrace.ver." :+ XRETRACE_VERSION :+ "/"
 

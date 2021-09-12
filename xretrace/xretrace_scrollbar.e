@@ -7,8 +7,17 @@
 // #import "xload-macros.e"
 // #endif
 
-#import "DLinkList.e"
+#define DLINKLIST_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
+
+//#import "DLinkList.esh"
 #import "xretrace.e"
+
+#if __VERSION__ < 25
+#undef bool
+#define bool boolean
+#undef _maybe_quote_filename
+#define _maybe_quote_filename  maybe_quote_filename 
+#endif
 
 
 defeventtab xretrace_scrollbar_form;
@@ -16,16 +25,16 @@ defeventtab xretrace_scrollbar_form;
 //namespace user_graeme;
 
  
-struct xbar_form_data {
+struct xretrace_scrollbar_form_data {
    int wid;
    int curr_line;
    int nof_lines;
    int buf_id;
-   boolean modified;
+   bool modified;
    int edit_buf_wid;
    int num_marker_rows;
-   boolean no_markup;
-   boolean close_me;
+   bool no_markup;
+   bool close_me;
    int listbox_row_bitmap_id[];
    int listbox_row_associated_line_number[];
 };
@@ -38,30 +47,13 @@ static int pic_blank_line;
 static int pic_scrollbar_image;
 static int pic_changed_and_bookmarked_line;
 
-static boolean xbar_update_needed;  // global for all xbar forms
+static bool xretrace_scrollbar_update_needed;  // global for all xbar forms
 
-static xbar_form_data xbar_forms[];
+static xretrace_scrollbar_form_data xretrace_scrollbar_forms[];
 
-#define GRAY 0X00A8A8A8
-#define INACTIVE_SCROLLBAR_HANDLE_COLOUR 0X00EE62BD
-#define RED_MINUS1 0x000000FE
-
-// void xbar1.rbutton_down()
-// {
-//    //p_active_form._delete_window();
-// }
-
-
-//int def_say_yes_no = 0;
-//int xrs_def_say_yes_no = 0;
-//
-//_command void mysay(_str string="")
-//{
-//   if ( def_say_yes_no || xrs_def_say_yes_no ) {
-//      say(string);
-//   }
-//   return;
-//}
+#define XRETRACE_GRAY 0X00A8A8A8
+#define XRETRACE_INACTIVE_SCROLLBAR_HANDLE_COLOUR 0X00EE62BD
+#define XRETRACE_RED_MINUS1 0x000000FE
 
 
 
@@ -82,25 +74,25 @@ static int right_mouse_xbar_form_id;
 _command xretrace_scrollbar_form_close()
 {
    //message("kkkkkkkkkkkkkkkkkkkk");
-   xbar_forms[right_mouse_xbar_form_id].close_me = true;
-   xbar_update_needed = true;
+   xretrace_scrollbar_forms[right_mouse_xbar_form_id].close_me = true;
+   xretrace_scrollbar_update_needed = true;
 }
 
 
 _command void xretrace_set_bookmark_for_buffer() name_info(',')
 {
    xretrace_add_bookmark_for_buffer(_mdi.p_child.p_buf_name, _mdi.p_child, _mdi.p_child.p_line, _mdi.p_child.p_col); 
-   xbar_forms[right_mouse_xbar_form_id].no_markup = true;
+   xretrace_scrollbar_forms[right_mouse_xbar_form_id].no_markup = true;
 }
 
 _command void xretrace_clear_bookmark_for_buffer() name_info(',')
 {
    xretrace_remove_bookmark_for_buffer(_mdi.p_child.p_buf_name, _mdi.p_child.p_line); 
-   xbar_forms[right_mouse_xbar_form_id].no_markup = true;
+   xretrace_scrollbar_forms[right_mouse_xbar_form_id].no_markup = true;
 }
 
 
-_command void do_nothing() name_info(',')
+_command void xretrace_do_nothing() name_info(',')
 {
    message("hello hello hello");
 }
@@ -125,7 +117,7 @@ static void process_right_mouse_click(int wid, int edwin, int formid)
    // build the menu
    _menu_insert(menu_handle,-1,MF_ENABLED,
                 "This item intentionally does nothing",
-                "do_nothing","","",'');
+                "xretrace_do_nothing","","",'');
 
    _menu_insert(menu_handle,-1,MF_ENABLED,
                 "&Close ",
@@ -187,7 +179,7 @@ static void set_scrollbar_handle_location_from_curr_line(int wid, int editor_wid
 }
 
 
-#define PIXELS_PER_LISTBOX_LINE 6
+#define XRETRACE_PIXELS_PER_LISTBOX_LINE 6
 
 static void set_control_sizes(int wid, int k)
 {
@@ -213,11 +205,11 @@ static void set_control_sizes(int wid, int k)
    wid.current_line_image.p_x = wid.ctllist1.p_x;
 
    // using text_height works only when the text height is greater than the bitmap height
-   // xbar_forms[k].num_marker_rows = wid.ctllist1.p_client_height intdiv
+   // xretrace_scrollbar_forms[k].num_marker_rows = wid.ctllist1.p_client_height intdiv
    //                                  (_ly2dy( wid.p_xyscale_mode,wid.ctllist1._text_height()) + 2);
 
    // bitmap height is 2 pixels with 4 pix between bitmaps  -  2 + 4 = 6
-   xbar_forms[k].num_marker_rows = wid.ctllist1.p_client_height intdiv PIXELS_PER_LISTBOX_LINE; 
+   xretrace_scrollbar_forms[k].num_marker_rows = wid.ctllist1.p_client_height intdiv XRETRACE_PIXELS_PER_LISTBOX_LINE; 
 }
 
 
@@ -275,8 +267,8 @@ static void set_scrollbar_handle_colour(int colour, int edwin)
    _control scrollbar_handle_image;
    _control current_line_image;
 
-   if ( colour == INACTIVE_SCROLLBAR_HANDLE_COLOUR && edwin.p_modify ) 
-      p_active_form.scrollbar_handle_image.p_backcolor = RED_MINUS1;  // red minus one
+   if ( colour == XRETRACE_INACTIVE_SCROLLBAR_HANDLE_COLOUR && edwin.p_modify ) 
+      p_active_form.scrollbar_handle_image.p_backcolor = XRETRACE_RED_MINUS1;  // red minus one
    else
       p_active_form.scrollbar_handle_image.p_backcolor = colour;
 
@@ -288,16 +280,16 @@ static int find_nearest_marker(int formid, int wid)
 {
    _control scrollbar_image;
 
-   if ( xbar_forms[formid].no_markup ) {
+   if ( xretrace_scrollbar_forms[formid].no_markup ) {
       //say('no markup');
       return -1;         // 
    }
-   int max_rows = xbar_forms[formid].num_marker_rows;
-   if ( max_rows > xbar_forms[formid].listbox_row_associated_line_number._length() ) {
-      max_rows = xbar_forms[formid].listbox_row_associated_line_number._length();
+   int max_rows = xretrace_scrollbar_forms[formid].num_marker_rows;
+   if ( max_rows > xretrace_scrollbar_forms[formid].listbox_row_associated_line_number._length() ) {
+      max_rows = xretrace_scrollbar_forms[formid].listbox_row_associated_line_number._length();
    }
    int fred = wid.scrollbar_image.mou_last_y();
-   int listbox_row = (fred / PIXELS_PER_LISTBOX_LINE) + 2;
+   int listbox_row = (fred / XRETRACE_PIXELS_PER_LISTBOX_LINE) + 2;
    if ( listbox_row >= max_rows ) {
       listbox_row = max_rows - 1;
    }
@@ -307,13 +299,13 @@ static int find_nearest_marker(int formid, int wid)
    // find the nearest marker
    int k1 = 0, k2 = 0;
    while ( k1 < 2 && listbox_row >= k1 ) {
-      if ( xbar_forms[formid].listbox_row_associated_line_number[listbox_row - k1] > 0 ) {
+      if ( xretrace_scrollbar_forms[formid].listbox_row_associated_line_number[listbox_row - k1] > 0 ) {
          break;
       }
       ++k1;
    }
    while ( (k2 < 2) && (listbox_row + k2 < max_rows) ) {
-      if ( xbar_forms[formid].listbox_row_associated_line_number[listbox_row + k2] > 0 ) {
+      if ( xretrace_scrollbar_forms[formid].listbox_row_associated_line_number[listbox_row + k2] > 0 ) {
          break;
       }
       ++k2
@@ -343,20 +335,20 @@ static int find_nearest_marker(int formid, int wid)
 // _IsKeyDown(CTRL)
 
 
-static int run_xrs_event_loop(boolean lbutton = false)
+static int run_xrs_event_loop(bool lbutton = false)
 {
    _control scrollbar_handle_image;
    _control current_line_image;
    _control scrollbar_image;
 
-   //boolean first_time = true;
+   //bool first_time = true;
 
    //int x_on_entry = wid.mou_last_x();
    //int y_on_entry = wid.mou_last_y();
 
    //int y_last, y_now, num;
    //int x_last, x_now, proc_count;
-   //boolean prev_y_greater_x;
+   //bool prev_y_greater_x;
 
    int edwin = GetEditorCtlWid(p_active_form);
    int xbar_wid = p_active_form;
@@ -367,10 +359,10 @@ static int run_xrs_event_loop(boolean lbutton = false)
    int start_line  = edwin.p_line;
    int exit_line = edwin.p_line;
    int start_col = edwin.p_col;
-   boolean lock_line = false;
-   boolean spacebar_lock = false;
-   boolean spacebar_direction = true;  // true is down
-   boolean first_time = true;
+   bool lock_line = false;
+   bool spacebar_lock = false;
+   bool spacebar_direction = true;  // true is down
+   bool first_time = true;
 
    int my1 = xbar_wid.scrollbar_image.mou_last_y();
    int mx1 = xbar_wid.scrollbar_image.mou_last_x();
@@ -383,7 +375,7 @@ static int run_xrs_event_loop(boolean lbutton = false)
    _set_timer(3000);
    mou_mode(2);
    mou_capture();
-   boolean exit_event_loop = false;
+   bool exit_event_loop = false;
    _str event;
    while (!exit_event_loop) {
       if ( lbutton ) {
@@ -420,7 +412,7 @@ static int run_xrs_event_loop(boolean lbutton = false)
             _kill_timer();
             mou_mode(0);
             mou_release();
-            set_scrollbar_handle_colour(INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
+            set_scrollbar_handle_colour(XRETRACE_INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
             edwin._set_focus();
             return 0;
          }
@@ -441,8 +433,8 @@ static int run_xrs_event_loop(boolean lbutton = false)
       case LBUTTON_DOWN:
          int lr = find_nearest_marker(formid, xbar_wid);
          //mysay("F1 " lr);
-         if ( (lr > 0) && (xbar_forms[formid].listbox_row_associated_line_number[lr] > 0) ) {
-            edwin.p_line = xbar_forms[formid].listbox_row_associated_line_number[lr];
+         if ( (lr > 0) && (xretrace_scrollbar_forms[formid].listbox_row_associated_line_number[lr] > 0) ) {
+            edwin.p_line = xretrace_scrollbar_forms[formid].listbox_row_associated_line_number[lr];
             edwin.center_line();
             lock_line = true;
             exit_line = edwin.p_line;
@@ -486,7 +478,7 @@ static int run_xrs_event_loop(boolean lbutton = false)
          mou_mode(0);
          mou_release();
          //mysay('this one');
-         set_scrollbar_handle_colour(INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
+         set_scrollbar_handle_colour(XRETRACE_INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
          edwin.p_line = exit_line;
          edwin.center_line();
          edwin._set_focus();  // so that _mdi.p_child is correct
@@ -517,10 +509,10 @@ static int run_xrs_event_loop(boolean lbutton = false)
       _str event = get_event();
       //mysay(event2name(event));
 
-      if ( xbar_forms[formid].close_me ) {
+      if ( xretrace_scrollbar_forms[formid].close_me ) {
          mou_mode(0);
          mou_release();
-         set_scrollbar_handle_colour(INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
+         set_scrollbar_handle_colour(XRETRACE_INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
          edwin.p_line = exit_line;
          edwin.center_line();
          return 0;
@@ -532,7 +524,7 @@ static int run_xrs_event_loop(boolean lbutton = false)
       default:
          mou_mode(0);
          mou_release();
-         set_scrollbar_handle_colour(INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
+         set_scrollbar_handle_colour(XRETRACE_INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
          edwin.p_line = exit_line;
          edwin.center_line();
          return 0;
@@ -546,7 +538,7 @@ static int run_xrs_event_loop(boolean lbutton = false)
          break;
 
       case 'ESC' :
-         set_scrollbar_handle_colour(INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
+         set_scrollbar_handle_colour(XRETRACE_INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
          edwin.p_line = start_line;
          edwin.center_line();
          mou_mode(0);
@@ -568,14 +560,14 @@ static int run_xrs_event_loop(boolean lbutton = false)
          spacebar_direction = !spacebar_direction;
          // fall through
       case ' ':
-         if ( xbar_forms[formid].no_markup ) break;
-         int max_rows = xbar_forms[formid].num_marker_rows;
-         if ( max_rows > xbar_forms[formid].listbox_row_associated_line_number._length() ) {
-            max_rows = xbar_forms[formid].listbox_row_associated_line_number._length();
+         if ( xretrace_scrollbar_forms[formid].no_markup ) break;
+         int max_rows = xretrace_scrollbar_forms[formid].num_marker_rows;
+         if ( max_rows > xretrace_scrollbar_forms[formid].listbox_row_associated_line_number._length() ) {
+            max_rows = xretrace_scrollbar_forms[formid].listbox_row_associated_line_number._length();
          }
 
          if ( !spacebar_lock ) {
-            listbox_row = xbar_wid.scrollbar_image.mou_last_y() / PIXELS_PER_LISTBOX_LINE;
+            listbox_row = xbar_wid.scrollbar_image.mou_last_y() / XRETRACE_PIXELS_PER_LISTBOX_LINE;
             if ( listbox_row >= max_rows ) {
                listbox_row = max_rows - 1;
             }
@@ -592,8 +584,8 @@ static int run_xrs_event_loop(boolean lbutton = false)
          }
 
          while ( 1 ) {
-            if ( xbar_forms[formid].listbox_row_associated_line_number[listbox_row] > 0 ) {
-               edwin.p_line = xbar_forms[formid].listbox_row_associated_line_number[listbox_row];
+            if ( xretrace_scrollbar_forms[formid].listbox_row_associated_line_number[listbox_row] > 0 ) {
+               edwin.p_line = xretrace_scrollbar_forms[formid].listbox_row_associated_line_number[listbox_row];
                edwin.center_line();
                exit_line = edwin.p_line;
                lock_line = true;
@@ -625,7 +617,7 @@ static int run_xrs_event_loop(boolean lbutton = false)
             {
                mou_mode(0);
                mou_release();
-               set_scrollbar_handle_colour(INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);   
+               set_scrollbar_handle_colour(XRETRACE_INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);   
                edwin.p_line = exit_line;
                edwin.center_line();
                return 0;
@@ -643,8 +635,8 @@ static int run_xrs_event_loop(boolean lbutton = false)
          if ( mx < 16 ) {
             int lr = find_nearest_marker(formid, xbar_wid);
             //mysay("F2 " lr);
-            if ( (lr > 0) && (xbar_forms[formid].listbox_row_associated_line_number[lr] > 0) ) {
-               edwin.p_line = xbar_forms[formid].listbox_row_associated_line_number[lr];
+            if ( (lr > 0) && (xretrace_scrollbar_forms[formid].listbox_row_associated_line_number[lr] > 0) ) {
+               edwin.p_line = xretrace_scrollbar_forms[formid].listbox_row_associated_line_number[lr];
                edwin.center_line();
                lock_line = true;
                exit_line = edwin.p_line;
@@ -674,7 +666,7 @@ static int run_xrs_event_loop(boolean lbutton = false)
          mou_mode(0);
          mou_release();
          //mysay('saw it');
-         set_scrollbar_handle_colour(INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
+         set_scrollbar_handle_colour(XRETRACE_INACTIVE_SCROLLBAR_HANDLE_COLOUR, edwin);  
          edwin.p_line = exit_line;
          edwin.center_line();
          edwin._set_focus();  // so that _mdi.p_child is correct
@@ -741,8 +733,8 @@ scrollbar_image.lbutton_down()
 static int find_xbar_form_from_wid(int wid)
 {
    int k;
-   for ( k = 0; k < xbar_forms._length(); ++k  ) {
-      if ( xbar_forms[k].wid == wid ) {
+   for ( k = 0; k < xretrace_scrollbar_forms._length(); ++k  ) {
+      if ( xretrace_scrollbar_forms[k].wid == wid ) {
          return k;
       }
    }
@@ -755,13 +747,13 @@ static int register_xbar_form(int wid)
 {
    int k = find_xbar_form_from_wid(wid);
    if ( k < 0 ) {
-      for ( k = 0; k < xbar_forms._length(); ++k ) {
-         if ( xbar_forms[k].wid == -1 ) {
+      for ( k = 0; k < xretrace_scrollbar_forms._length(); ++k ) {
+         if ( xretrace_scrollbar_forms[k].wid == -1 ) {
             // found a free one
             break;
          }
       }
-      xbar_forms[k].wid = wid;
+      xretrace_scrollbar_forms[k].wid = wid;
    }
    return k;
 }
@@ -778,19 +770,19 @@ void xretrace_scrollbar_form.on_create()
    if ( k >= 0 ) {
       if ( ! _no_child_windows() ) {
          int edwin = GetEditorCtlWid(p_window_id);
-         xbar_forms[k].curr_line = edwin.p_line;
-         xbar_forms[k].nof_lines = edwin.p_Noflines;
-         xbar_forms[k].buf_id = edwin.p_buf_id;
-         xbar_forms[k].modified = edwin.p_modify;
-         xbar_forms[k].edit_buf_wid = edwin;
+         xretrace_scrollbar_forms[k].curr_line = edwin.p_line;
+         xretrace_scrollbar_forms[k].nof_lines = edwin.p_Noflines;
+         xretrace_scrollbar_forms[k].buf_id = edwin.p_buf_id;
+         xretrace_scrollbar_forms[k].modified = edwin.p_modify;
+         xretrace_scrollbar_forms[k].edit_buf_wid = edwin;
          set_scrollbar_handle_location_from_curr_line(p_window_id, edwin);
-         xbar_forms[k].no_markup = true;
-         xbar_forms[k].close_me = false;
-         xbar_update_needed = true;
+         xretrace_scrollbar_forms[k].no_markup = true;
+         xretrace_scrollbar_forms[k].close_me = false;
+         xretrace_scrollbar_update_needed = true;
       }
       else
       {
-         xbar_forms[k].edit_buf_wid = -1;
+         xretrace_scrollbar_forms[k].edit_buf_wid = -1;
       }
    }
 }
@@ -800,7 +792,7 @@ void xretrace_scrollbar_form.on_destroy()
 {
    int k = find_xbar_form_from_wid(p_window_id);
    if ( k >= 0 ) {
-      xbar_forms[k].wid = -1;
+      xretrace_scrollbar_forms[k].wid = -1;
    }
 }
 
@@ -813,14 +805,14 @@ void xretrace_scrollbar_form.on_resize()
       return;
    }
    int edit_wid = GetEditorCtlWid(p_window_id);
-   xbar_forms[k].curr_line = edit_wid.p_line;
-   xbar_forms[k].nof_lines = edit_wid.p_Noflines;
-   xbar_forms[k].buf_id = edit_wid.p_buf_id;
-   xbar_forms[k].modified = edit_wid.p_modify;
-   xbar_forms[k].edit_buf_wid = edit_wid;
-   xbar_forms[k].no_markup = true;  // regenerate
+   xretrace_scrollbar_forms[k].curr_line = edit_wid.p_line;
+   xretrace_scrollbar_forms[k].nof_lines = edit_wid.p_Noflines;
+   xretrace_scrollbar_forms[k].buf_id = edit_wid.p_buf_id;
+   xretrace_scrollbar_forms[k].modified = edit_wid.p_modify;
+   xretrace_scrollbar_forms[k].edit_buf_wid = edit_wid;
+   xretrace_scrollbar_forms[k].no_markup = true;  // regenerate
    set_scrollbar_handle_location_from_curr_line(p_window_id, edit_wid);
-   xbar_update_needed = true;
+   xretrace_scrollbar_update_needed = true;
 }
 
 
@@ -840,24 +832,24 @@ static void add_markup_from_list(dlist & alist, int bitmap, int edwin, int formi
          ip->last_line = info1.LineNum;
       }
       if ( ip->last_line > 0 ) {
-         int index = (int)((double)(xbar_forms[formid].num_marker_rows * ip->last_line) / nlines + 0.5) + 1;
-         if ( index >= xbar_forms[formid].num_marker_rows ) {
-            index = xbar_forms[formid].num_marker_rows - 1;
+         int index = (int)((double)(xretrace_scrollbar_forms[formid].num_marker_rows * ip->last_line) / nlines + 0.5) + 1;
+         if ( index >= xretrace_scrollbar_forms[formid].num_marker_rows ) {
+            index = xretrace_scrollbar_forms[formid].num_marker_rows - 1;
          }
-         if ( (bitmap2 > 0) && (ip->flags & MARKER_WAS_ALREADY_HERE_ON_OPENING) ) 
+         if ( (bitmap2 > 0) && (ip->flags & XRETRACE_MARKER_WAS_ALREADY_HERE_ON_OPENING) ) 
          {
-            xbar_forms[formid].listbox_row_bitmap_id[index] = bitmap2;
+            xretrace_scrollbar_forms[formid].listbox_row_bitmap_id[index] = bitmap2;
          }
          else
          {
-            if ( xbar_forms[formid].listbox_row_bitmap_id[index] == pic_changed_line && bitmap == pic_bookmark_line ) {
-               xbar_forms[formid].listbox_row_bitmap_id[index] = pic_changed_and_bookmarked_line;
+            if ( xretrace_scrollbar_forms[formid].listbox_row_bitmap_id[index] == pic_changed_line && bitmap == pic_bookmark_line ) {
+               xretrace_scrollbar_forms[formid].listbox_row_bitmap_id[index] = pic_changed_and_bookmarked_line;
             }
             else
-               xbar_forms[formid].listbox_row_bitmap_id[index] = bitmap;
+               xretrace_scrollbar_forms[formid].listbox_row_bitmap_id[index] = bitmap;
          }
 
-         xbar_forms[formid].listbox_row_associated_line_number[index] = ip->last_line;
+         xretrace_scrollbar_forms[formid].listbox_row_associated_line_number[index] = ip->last_line;
          //("aa2 " :+ index :+ " " :+ ip->last_line);
       }
    }
@@ -885,27 +877,27 @@ void xretrace_add_markup_to_scrollbar_for_edwin(int edwin, dlist & visited_list,
    
    int wid = p_window_id;
    int formid;
-   for ( formid = 0; formid < xbar_forms._length(); ++formid ) {
-      if ( xbar_forms[formid].wid > 0 ) {
-         int edit_wid = GetEditorCtlWid(xbar_forms[formid].wid);
+   for ( formid = 0; formid < xretrace_scrollbar_forms._length(); ++formid ) {
+      if ( xretrace_scrollbar_forms[formid].wid > 0 ) {
+         int edit_wid = GetEditorCtlWid(xretrace_scrollbar_forms[formid].wid);
          if ( edit_wid == edwin ) {
             int h;
-            xbar_forms[formid].listbox_row_bitmap_id._makeempty();
-            for ( h = 0; h < xbar_forms[formid].num_marker_rows; ++h ) {
-               xbar_forms[formid].listbox_row_bitmap_id[h] = pic_blank_line;
-               xbar_forms[formid].listbox_row_associated_line_number[h] = -1;
+            xretrace_scrollbar_forms[formid].listbox_row_bitmap_id._makeempty();
+            for ( h = 0; h < xretrace_scrollbar_forms[formid].num_marker_rows; ++h ) {
+               xretrace_scrollbar_forms[formid].listbox_row_bitmap_id[h] = pic_blank_line;
+               xretrace_scrollbar_forms[formid].listbox_row_associated_line_number[h] = -1;
             }
             add_markup_from_list(visited_list, pic_visited_line, edwin, formid);
             add_markup_from_list(changed_list, pic_changed_line, edwin, formid, pic_old_changed_line);
             add_markup_from_list(bookmark_list, pic_bookmark_line, edwin, formid);
 
-            xbar_forms[formid].wid.ctllist1._lbclear();
+            xretrace_scrollbar_forms[formid].wid.ctllist1._lbclear();
 
-            for ( h = 0; h < (xbar_forms[formid].listbox_row_bitmap_id._length() - 2); ++h ) {
-               xbar_forms[formid].wid.ctllist1._lbadd_item("", 0, xbar_forms[formid].listbox_row_bitmap_id[h+2]);
+            for ( h = 0; h < (xretrace_scrollbar_forms[formid].listbox_row_bitmap_id._length() - 2); ++h ) {
+               xretrace_scrollbar_forms[formid].wid.ctllist1._lbadd_item("", 0, xretrace_scrollbar_forms[formid].listbox_row_bitmap_id[h+2]);
             } 
             // xretrace will keep trying to add markup until no_markup goes false
-            xbar_forms[formid].no_markup = false;
+            xretrace_scrollbar_forms[formid].no_markup = false;
          }
       }
    }
@@ -927,57 +919,57 @@ static void check_update_xretrace_scrollbar()
 // every callback - default rate is every 250 ms.
 // it deletes an xbar form when needed and updates the position of the scrollbar handle
 // return value is positive window ID if an xbar form needs markup added
-int xretrace_update_scrollbar_forms(boolean event_loop = false)
+int xretrace_update_scrollbar_forms(bool event_loop = false)
 {
    _control scrollbar_handle_image;
    int no_markup_wid = -1;
    if ( _no_child_windows() ) {
       return -1;
    }
-   // if ( !xbar_update_needed ) {
+   // if ( !xretrace_scrollbar_update_needed ) {
    //    return -1;
    // }
 
    int wid = p_window_id;
    int k;
-   for ( k = 0; k < xbar_forms._length(); ++k ) {
-      if ( xbar_forms[k].wid > 0 ) {
-         if ( !event_loop && xbar_forms[k].close_me ) {
-            xbar_forms[k].wid._delete_window();
+   for ( k = 0; k < xretrace_scrollbar_forms._length(); ++k ) {
+      if ( xretrace_scrollbar_forms[k].wid > 0 ) {
+         if ( !event_loop && xretrace_scrollbar_forms[k].close_me ) {
+            xretrace_scrollbar_forms[k].wid._delete_window();
             continue;
          }
 
-         int edit_wid = GetEditorCtlWid(xbar_forms[k].wid);
+         int edit_wid = GetEditorCtlWid(xretrace_scrollbar_forms[k].wid);
          if ( edit_wid <= 0 ) {
             continue;
          }
 
-         if ( xbar_forms[k].edit_buf_wid == edit_wid ) {
-            if ( xbar_forms[k].curr_line == edit_wid.p_line  &&
-                 xbar_forms[k].nof_lines == edit_wid.p_Noflines  &&
-                 xbar_forms[k].buf_id == edit_wid.p_buf_id  &&
-                 xbar_forms[k].modified == edit_wid.p_modify   )   {
+         if ( xretrace_scrollbar_forms[k].edit_buf_wid == edit_wid ) {
+            if ( xretrace_scrollbar_forms[k].curr_line == edit_wid.p_line  &&
+                 xretrace_scrollbar_forms[k].nof_lines == edit_wid.p_Noflines  &&
+                 xretrace_scrollbar_forms[k].buf_id == edit_wid.p_buf_id  &&
+                 xretrace_scrollbar_forms[k].modified == edit_wid.p_modify   )   {
                continue;
             }
          }
-         xbar_forms[k].curr_line = edit_wid.p_line;
-         xbar_forms[k].nof_lines = edit_wid.p_Noflines;
-         xbar_forms[k].buf_id = edit_wid.p_buf_id;
-         xbar_forms[k].edit_buf_wid = edit_wid;
-         xbar_forms[k].modified = edit_wid.p_modify;
-         if ( (xbar_forms[k].wid.scrollbar_handle_image.p_backcolor == INACTIVE_SCROLLBAR_HANDLE_COLOUR) && edit_wid.p_modify ) {
-            xbar_forms[k].wid.scrollbar_handle_image.p_backcolor = RED_MINUS1;
+         xretrace_scrollbar_forms[k].curr_line = edit_wid.p_line;
+         xretrace_scrollbar_forms[k].nof_lines = edit_wid.p_Noflines;
+         xretrace_scrollbar_forms[k].buf_id = edit_wid.p_buf_id;
+         xretrace_scrollbar_forms[k].edit_buf_wid = edit_wid;
+         xretrace_scrollbar_forms[k].modified = edit_wid.p_modify;
+         if ( (xretrace_scrollbar_forms[k].wid.scrollbar_handle_image.p_backcolor == XRETRACE_INACTIVE_SCROLLBAR_HANDLE_COLOUR) && edit_wid.p_modify ) {
+            xretrace_scrollbar_forms[k].wid.scrollbar_handle_image.p_backcolor = XRETRACE_RED_MINUS1;
          }
-         else if ( (xbar_forms[k].wid.scrollbar_handle_image.p_backcolor == RED_MINUS1) && !edit_wid.p_modify) {
-                 xbar_forms[k].wid.scrollbar_handle_image.p_backcolor = INACTIVE_SCROLLBAR_HANDLE_COLOUR;
+         else if ( (xretrace_scrollbar_forms[k].wid.scrollbar_handle_image.p_backcolor == XRETRACE_RED_MINUS1) && !edit_wid.p_modify) {
+                 xretrace_scrollbar_forms[k].wid.scrollbar_handle_image.p_backcolor = XRETRACE_INACTIVE_SCROLLBAR_HANDLE_COLOUR;
          }
-         set_scrollbar_handle_location_from_curr_line(xbar_forms[k].wid, edit_wid);
-         if ( xbar_forms[k].no_markup ) {
+         set_scrollbar_handle_location_from_curr_line(xretrace_scrollbar_forms[k].wid, edit_wid);
+         if ( xretrace_scrollbar_forms[k].no_markup ) {
             no_markup_wid = edit_wid;
          }
       }
    }
-   xbar_update_needed = false;
+   xretrace_scrollbar_update_needed = false;
    p_window_id = wid;
    //if ( no_markup_wid ) {
    //   say("xrs " :+ no_markup_wid);
@@ -997,9 +989,9 @@ int xretrace_update_scrollbar_forms(boolean event_loop = false)
 
 _command void xretrace_delete_scrollbar_windows() name_info(',')
 {
-   for ( k = 0; k < xbar_forms._length(); ++k ) {
-      if ( xbar_forms[k].wid > 0 ) {
-            xbar_forms[k].wid._delete_window();
+   for ( k = 0; k < xretrace_scrollbar_forms._length(); ++k ) {
+      if ( xretrace_scrollbar_forms[k].wid > 0 ) {
+            xretrace_scrollbar_forms[k].wid._delete_window();
       }
    }
 }
@@ -1011,7 +1003,7 @@ definit()
    tw_register_form('xretrace_scrollbar_form', TWF_SUPPORTS_MULTIPLE, DOCKAREAPOS_NONE);  
    //if (arg(1) != "L") {
       // not a load command
-   xbar_forms._makeempty();
+   xretrace_scrollbar_forms._makeempty();
    //}
 
    #if __VERSION__  >=  23
@@ -1128,7 +1120,7 @@ _menu xretrace_scrollbar_popup_menu {
 
 int xretrace_def_scroll_up_with_cursor;
 static int scroll_up_with_cursor_key_bindings;
-static boolean block_scroll_flag;
+static bool block_scroll_flag;
 
 void xretrace_scroll_callback()
 {
@@ -1136,10 +1128,10 @@ void xretrace_scroll_callback()
 }
 
 
-static void xscroll(boolean is_up)
+static void xscroll(bool is_up)
 {
-   boolean xrs = false;
-   boolean try_call_key = false;
+   bool xrs = false;
+   bool try_call_key = false;
    _str ev;
    if ( block_scroll_flag ) {
       return;
@@ -1250,7 +1242,7 @@ _command void xretrace_scroll_down() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIR
 
 
 
-_command void xretrace_toggle_xscroll(boolean force_xscroll_off = false) name_info(',')
+_command void xretrace_toggle_xscroll(bool force_xscroll_off = false) name_info(',')
 {
    if ( force_xscroll_off ) {
       execute('bind-to-key -r fast_scroll 'event2index(name2event('WHEEL-UP')),"");

@@ -8,12 +8,14 @@
 #pragma option(strictparens,on)
 
 
-
 #if __VERSION__ < 25
+#undef bool
 #define bool boolean
 #endif
 
-static boolean    xxutils_debug = false;
+
+
+static bool    xxutils_debug = false;
 
 
 static void xxdebug(...)
@@ -428,6 +430,418 @@ _command void xopen_logs() name_info(',')
    edit(_config_path() :+ "logs" :+ FILESEP :+ "stack.log");
 }
 
+//============================================================================================
+// notepad
+//============================================================================================
+
+
+static int notepad_number = 0;
+static int get_notepad_number()
+{
+   if ( ++notepad_number > 99 ) {
+      notepad_number = 1;
+   }
+   return notepad_number;
+}
+
+#if __VERSION__ < 25
+const MAX_WIDTH_IN_PIXELS = 800;
+const  INITIAL_HEIGHT   = 4000;
+const  INITIAL_WIDTH  = 3000;
+#else
+static const MAX_WIDTH_IN_PIXELS = 800;
+static const  INITIAL_HEIGHT   = 4000;
+static const  INITIAL_WIDTH  = 3000;
+#endif
+
+static typeless def_notepad_font = '';
+
+
+static int pix2scale(int pix,int wid)
+{
+   return _dx2lx(wid.p_xyscale_mode, pix);
+}
+
+static int scale2pix(int scale,int wid)
+{
+   return _lx2dx(wid.p_xyscale_mode, scale);
+}
+
+
+
+static _str get_the_longest_line() 
+{
+   int loops = 100000;
+   int maxl = 0;
+   int ll = 0;
+   top();
+   while (--loops) {
+      end_line();
+      if (p_col > maxl) {
+         ll = p_line;
+         maxl = p_col;
+      }
+      if (down())
+         break;
+   }
+   goto_line(ll);
+   get_line(ss);
+   return ss;
+}
+
+
+_command void xnotepad_word() name_info(',')
+{
+   xnotepad(true);
+}
+
+_command void xnotepad_create_time_date_string() name_info(',')
+{
+   xnotepad(false, stranslate(_date('I'),'-','/') :+ '-' :+ stranslate(_time('M'), '-', ':'));  
+}
+
+
+
+/* places selected text in a floating 'notepad' window.  If a notepad window
+   already exists, current selection is appended.
+*/
+_command xnotepad(bool select_word = false, _str string1 = '') name_info(','MARK_ARG2|VSARG2_MULTI_CURSOR|VSARG2_REQUIRES_EDITORCTL|VSARG2_READ_ONLY)
+{
+   typeless p;
+   save_pos(p);
+   int pwin = p_window_id;
+   bool no_selection = false;
+
+   if ( !select_active() ) {
+      no_selection = true;
+      if (select_word) 
+         select_whole_word();
+      else
+         select_line();
+   }
+
+   if (select_active()) {
+      _str select_type = _select_type();
+      typeless oldsel = _duplicate_selection();
+      wid = _find_object('notepadform','n');
+      if (!wid) {
+
+         _mdi.p_child._GetVisibleScreen(auto screen_x, auto screen_y, auto screen_width, auto screen_height);
+         int screen_midpt_x = (screen_width intdiv 2);
+         int screen_midpt_y = (screen_height intdiv 2);
+
+         wid = _create_window(OI_FORM,
+                              _mdi,
+                              'Notepad ' :+ get_notepad_number(),
+                              _dx2lx(SM_TWIP, screen_midpt_x - 300),   // create window needs twips
+                              _dy2ly(SM_TWIP, screen_midpt_y - 300),
+                              INITIAL_WIDTH,//width
+                              INITIAL_HEIGHT, //height
+                              CW_PARENT,
+                              BDS_SIZABLE);
+
+         wid.p_name = 'notepadform';
+
+         if (wid) {
+            editorwid = _create_window(OI_EDITOR,
+                                       wid,
+                                       '', // Title
+                                       - _twips_per_pixel_x(), // x - yep, this is negative
+                                       - _twips_per_pixel_y(), // y
+                                       wid.p_width - _twips_per_pixel_x(),
+                                       wid.p_height - _twips_per_pixel_y(),
+                                       CW_CHILD);
+            int wid2 = p_window_id;
+            p_window_id = editorwid;
+            p_auto_size = 0;
+            p_multi_select = MS_EDIT_WINDOW;
+            p_scroll_bars = SB_BOTH;
+            p_width = (wid.p_client_width + 2) * _twips_per_pixel_x();
+            p_height = (wid.p_client_height + 2) * _twips_per_pixel_y();
+            p_name = 'editwin';
+            if (def_notepad_font != '') {
+               parse def_notepad_font with fname','fsize;
+               p_font_name = fname;
+               if (fsize != '') {
+                  p_font_size = fsize;
+               }
+            }
+            else
+            {
+               def_notepad_font = p_font_name :+ ',' :+ p_font_size;
+            }
+            editorwid.top();
+            editorwid.delete_line();
+
+            if ( select_type != 'LINE' ) 
+               editorwid.insert_line('');
+
+            p_window_id = wid2;
+            index = find_index('user_graeme_notepad_resize', EVENTTAB_TYPE);
+            if (index) {
+               wid.p_eventtab = index;
+            }
+         }
+      }
+      else {
+         _control editwin;
+         editorwid = wid.editwin;
+         if ( select_type == 'LINE' ) {
+            editorwid.bottom();
+            editorwid.up();
+            editorwid.end_line();
+         }
+         else
+         {
+            editorwid.bottom();
+            editorwid.begin_line();
+         }
+      }
+      _mdi._set_focus();
+
+      if ( string1 != '' ) {
+         editorwid.insert_line(string1);
+      }
+      else
+      {
+         editorwid._copy_to_cursor();
+         if (select_type == 'CHAR' || select_type == 'BLOCK') {
+            editorwid.insert_line('');
+         }
+      }
+      _str ss = editorwid.get_the_longest_line();
+      editorwid.bottom();
+      editorwid.begin_line();
+      int ww = editorwid._text_width(ss) + pix2scale(50, editorwid);
+      editorwid.get_line(ss);
+      if ( ss != '' ) {
+         editorwid.end_line();
+         editorwid.insert_line('');
+      }
+      if ( ww > pix2scale(MAX_WIDTH_IN_PIXELS, editorwid) ) {
+         ww = pix2scale(MAX_WIDTH_IN_PIXELS, editorwid);
+      }
+      if ( ww > wid.p_width ) {
+         wid.p_width = ww;
+         editorwid.p_width = wid.p_width; 
+      }
+      _deselect();
+      _mdi.p_child._set_focus();
+      activate_window(pwin);
+      restore_pos(p);
+      if ( !no_selection ) 
+         _show_selection(oldsel);
+   }
+}
+
+defeventtab user_graeme_notepad_resize;
+
+user_graeme_notepad_resize.on_resize()
+{
+   int x = _control editwin;
+   int wid = p_window_id;
+   p_window_id = x;
+   p_width = (wid.p_client_width + 2) * _twips_per_pixel_x();
+   p_height = (wid.p_client_height + 2) * _twips_per_pixel_y();
+   p_window_id = wid;
+}
+
+
+//============================================================================================
+// key bindings stuff
+//============================================================================================
+
+
+
+static _str get_key_binding_name(_str keyname)
+{
+   int index = event2index(name2event(keyname));
+   index = eventtab_index(_default_keys, _default_keys, index);
+   if (index)
+      return translate(name_name(index),'_','-');
+   return '';
+}
+
+
+static output_key_binding(_str keyname, bool use_double = false)
+{
+   _str s = get_key_binding_name(keyname);
+   if (s != '')  {
+      if (use_double) {
+         // use double quotes if the keyname contains a single quote
+         _str k = substr(keyname :+ '"= ',1,16);
+         insert_line('  "' :+ k :+ s :+ ';');
+      }
+      else {
+         _str k = substr(keyname :+ "\'= ",1,16);
+         insert_line("  \'" :+ k :+ s :+ ';');
+      }
+   }
+}
+
+
+static output_key_family(_str base_key)
+{
+   bool use_double = base_key == "'";
+   output_key_binding(base_key, use_double);
+   output_key_binding('S-' :+ base_key, use_double);
+   output_key_binding('C-' :+ base_key, use_double);
+   output_key_binding('A-' :+ base_key, use_double);
+   output_key_binding('C-S-' :+ base_key, use_double);
+   output_key_binding('A-S-' :+ base_key, use_double);
+   output_key_binding('C-A-' :+ base_key, use_double);
+   output_key_binding('C-A-S-' :+ base_key, use_double);
+   insert_line('');
+}
+
+
+_command void xxkey_bindings_show() name_info(','VSARG2_TEXT_BOX|VSARG2_REQUIRES_EDITORCTL|VSARG2_LINEHEX)
+{
+   _str fn = _ConfigPath() :+ 'keybindings' FILESEP 'group-keydefs.e';
+   if ( !isdirectory(_ConfigPath() :+ 'keybindings') ) {
+      mkdir(_ConfigPath() :+ 'keybindings');
+   }
+   if ( !file_exists(fn) ) {
+      if (edit(' +t ' _maybe_quote_filename(fn))) {
+         return;
+      }
+   }
+   else
+   {
+      if (edit(_maybe_quote_filename(fn))) {
+         return;
+      }
+   }
+   if (p_buf_name != fn) {
+      return;
+   }
+   delete_all();
+
+   insert_line('');
+   insert_line('');
+
+   insert_line('  // ********************  FUNCTION KEYS  ********************');
+   insert_line('');
+
+   int k;
+   for (k =1; k < 13; ++k) {
+      output_key_family('F' :+ k);
+   }
+
+   insert_line('  // ********************  NON ALPHA-NUMERIC KEYS  ********************');
+   insert_line('');
+
+   output_key_family(' ');
+   output_key_family('BACKSPACE');
+   output_key_family('UP');
+   output_key_family('DOWN');
+   output_key_family('LEFT');
+   output_key_family('RIGHT');
+   output_key_family('ENTER');
+   output_key_family('TAB');
+   output_key_family('HOME');
+   output_key_family('END');
+   output_key_family('PGUP');
+   output_key_family('PGDN');
+   output_key_family('DEL');
+   output_key_family('INS');
+   output_key_family('[');
+   output_key_family(']');
+   output_key_family(',');
+   output_key_family('.');
+   output_key_family('/');
+   output_key_family('\');
+   output_key_family(';');
+   output_key_family("'");
+   output_key_family('=');
+   output_key_family('-');
+   output_key_family('`');
+   output_key_family('PAD-PLUS');
+   output_key_family('PAD-MINUS');
+   output_key_family('PAD-STAR');
+   output_key_family('PAD-SLASH');
+   output_key_family('PAD5');
+
+   insert_line('  // ********************  LETTERS  ********************');
+   insert_line('');
+   for (k = 0; k < 26; ++k) {
+      output_key_family(_chr(k + 0x41));
+   }
+
+   insert_line('  // ********************  NUMBERS  ********************');
+   insert_line('');
+   for (k = 0; k < 10; ++k) {
+      output_key_family(_chr(k + 0x30));
+   }
+
+   top();
+}
+
+
+static int kbt_menu_handle;
+
+static add_key_to_menu(_str keyname)
+{
+   _str s = get_key_binding_name(keyname);
+   if (s != '')  {
+      _menu_insert(kbt_menu_handle, 0, MF_ENABLED, substr(keyname,1,15) :+ '  ' :+ s, s,"","",s);
+   }
+}
+
+
+static generate_key_family_menu(_str base_key)
+{
+   add_key_to_menu('C-A-S-' :+ base_key);
+   add_key_to_menu('C-A-' :+ base_key);
+   add_key_to_menu('A-S-' :+ base_key);
+   add_key_to_menu('C-S-' :+ base_key);
+   add_key_to_menu('A-' :+ base_key);
+   add_key_to_menu('C-' :+ base_key);
+   add_key_to_menu('S-' :+ base_key);
+   add_key_to_menu(base_key);
+}
+
+
+_menu xxkey_binding_trainer_menu {
+}
+
+
+_command void xxkey_binding_trainer() name_info(',')
+{
+   int index=find_index("xxkey_binding_trainer_menu",oi2type(OI_MENU));
+   if (!index) {
+      return;
+   }
+   kbt_menu_handle=_menu_load(index,'P');
+   message('Press a key');
+
+   _str keyname = event2name(get_event());
+   
+   generate_key_family_menu(keyname);
+
+   // Show the menu.
+   int x = 100;
+   int y = 100;
+   x = mou_last_x('M')-x;y=mou_last_y('M')-y;
+   _lxy2dxy(p_scale_mode,x,y);
+   _map_xy(p_window_id,0,x,y,SM_PIXEL);
+   int flags=VPM_LEFTALIGN|VPM_RIGHTBUTTON;
+   int status=_menu_show(kbt_menu_handle,flags,x,y);
+   _menu_destroy(kbt_menu_handle);
+
+   // set the focus back
+   if (_mdi.p_child._no_child_windows()==0) {
+      _mdi.p_child._set_focus();
+   }
+}
+
+
+//============================================================================================
+//
+//============================================================================================
+
+
+
 
 static void show_xretrace_xxutils_help()
 {
@@ -450,6 +864,42 @@ static void show_xretrace_xxutils_help()
 
 
 
+_command void check_xtemp_new_temporary_file() name_info(',')
+{
+   int xx1 = find_index("xtemp_new_temporary_file", COMMAND_TYPE);
+   if ( index_callable(xx1) ) {
+      xtemp_new_temporary_file();
+   }
+}
+
+
+_command void check_xtemp_new_temporary_file_no_keep() name_info(',')
+{
+   int xx1 = find_index("xtemp_new_temporary_file_no_keep", COMMAND_TYPE);
+   if ( index_callable(xx1) ) {
+      xtemp_new_temporary_file_no_keep();
+   }
+}
+
+
+_command void check_start_xtemp_files_manager() name_info(',')
+{
+   int xx1 = find_index("start_xtemp_files_manager", COMMAND_TYPE);
+   if ( index_callable(xx1) ) {
+      start_xtemp_files_manager();
+   }
+}
+
+
+_command void check_stop_xtemp_files_manager() name_info(',')
+{
+   int xx1 = find_index("stop_xtemp_files_manager", COMMAND_TYPE);
+   if ( index_callable(xx1) ) {
+      stop_xtemp_files_manager();
+   }
+}
+
+
 _command void xxutils_help() name_info(',')
 {
    //int xx1 = find_index("show_xretrace_xxutils_help", PROC_TYPE);
@@ -469,13 +919,13 @@ _menu xmenu1 {
    "Diff last two buffers", "diff_last_two_buffers", "","","";
 
    "--","","","","";
-   "&New temporary file", "xtemp_new_temporary_file", "","","";
+   "&New temporary file",  "check_xtemp_new_temporary_file", "","","";
    submenu "&More","","","" {
       "Search &cplusplus.com", "search_cpp_ref", "", "", "";
       "Search &devdocs", "search_devdocs_cpp", "", "", "";
-      "New temporary file no keep", "xtemp_new_temporary_file_no_keep", "","","";
-      "Start xtemp file manager","start_xtemp_files_manager","","",""; 
-      "Stop xtemp file manager","stop_xtemp_files_manager","","",""; 
+      "New temporary file no keep", "check_xtemp_new_temporary_file_no_keep", "","","";
+      "Start xtemp file manager","check_start_xtemp_files_manager","","",""; 
+      "Stop xtemp file manager","check_stop_xtemp_files_manager","","",""; 
       "&xnotepad cur line or selection","xnotepad","","",""; 
       "xnotepad cur word","xnotepad_word","","",""; 
       "xnotepad date-time", "xnotepad_create_time_date_string","","","";
@@ -493,8 +943,8 @@ _menu xmenu1 {
       "Copy active project name to clipboard","xproject_name_to_clip","","",""; 
    }
    submenu "&Key bindings ","","","" {
-      "Show key &family","xkey_binding_trainer","","",""; 
-      "Show &all key family","xkey_bindings_show","","",""; 
+      "Show key &family","xxkey_binding_trainer","","",""; 
+      "Show &all key family","xxkey_bindings_show","","",""; 
       "Find &source code for command","find_key_binding","","",""; 
       "Key &bindings dialog","gui_keybindings","","",""; 
    }

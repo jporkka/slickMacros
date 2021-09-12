@@ -6,6 +6,12 @@
 #pragma option(strictparens,on)
 
 
+#if __VERSION__ < 25
+#undef bool
+#define bool boolean
+#endif
+
+
 
 _form xblock_selection_editor_form {
    p_backcolor=0x80000005;
