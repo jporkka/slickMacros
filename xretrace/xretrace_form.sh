@@ -6,7 +6,7 @@
 _form xretrace_form {
    p_backcolor=0x80000005;
    p_border_style=BDS_DIALOG_BOX;
-   p_caption="Xretrace  V2.10  Control Panel";
+   p_caption="Xretrace  V2.11  Control Panel";
    p_forecolor=0x80000008;
    p_height=6412;
    p_width=9744;

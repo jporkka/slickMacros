@@ -1457,7 +1457,6 @@ static void buffer_switch_setup_buffer_retrace_lists()
    }  // (not active) the retrace data has already been read previously for this file
 }
  
-int xgpinhere = 0;  // debug
 
 /******************************************************************************
  * maintain_cursor_retrace_history() 
@@ -1472,10 +1471,6 @@ static void maintain_cursor_retrace_history()
 {
    if ( _no_child_windows() || !xretrace_history_enabled ) 
       return;
-
-   if ( xgpinhere ) {
-      xdebug("inhere too");
-   }
 
    // xretrace_update_scrollbar_forms returns a non zero value if there is an xretrace scrollbar that doesn't have markup yet
    int edwin = xretrace_update_scrollbar_forms();
@@ -2176,21 +2171,13 @@ _command void xretrace_cursor() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_ED
    if (!check_xretrace_is_running()) 
       return;
 
-   // TODO looking for a bug in xretrace if xretrace_cursor is called rapidly repeatedly
-   if ( xgpinhere ) {
-      xdebug("inhere");
-      return;
-   }
    if ( retrace_no_re_entry > 0 ) {
       xdebug("reentry");
    }
 
-   xgpinhere = 1;
-
    if (dlist_is_empty(retrace_cursor_list)) {
       message('xretrace list is empty');
       xretrace_cursor_fwd_back_state = 0;
-      xgpinhere = 0;
       return;
    }
    if (xretrace_cursor_fwd_back_state > 0) {
@@ -2201,7 +2188,6 @@ _command void xretrace_cursor() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_ED
       
       xdebug("retrace cursor fwd");
       xretrace_cursor_fwd(); 
-      xgpinhere = 0;
       return;
    }
    // always force where we are now onto the retrace list so we can go back to
@@ -2209,8 +2195,6 @@ _command void xretrace_cursor() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_ED
    xdebug("retrace cursor alternate");
    update_retrace_cursor_list(true);
    retrace_steps_event_loop(true, -1, true);
-   xgpinhere = 0;
-
 }
 
 
