@@ -2654,7 +2654,7 @@ void _on_load_module_xretrace(_str module_name)
    if (_strip_filename(sm, 'PD') == 'xretrace.ex') {
       // if xretrace was previously running, release any resources
       xretrace_disable();
-      dsay("xretrace on-load - time " :+ _time('G'), "xretrace");
+      //dsay("xretrace on-load - time " :+ _time('G'), "xretrace");
       // https://www.epochconverter.com/
    }
 }
@@ -2666,7 +2666,7 @@ void _on_unload_module_xretrace(_str module_name)
    _str sm = strip(module_name, "B", "\'\"");
    if (_strip_filename(sm, 'PD') == 'xretrace.ex') {
       xretrace_disable();
-      dsay("xretrace on-unload - time " :+ _time('G'), "xretrace");
+      //dsay("xretrace on-unload - time " :+ _time('G'), "xretrace");
       // https://www.epochconverter.com/
    }
 }
@@ -2775,7 +2775,7 @@ definit()
    if (arg(1)=="L") {
       // If this is a reload
       xretrace_disable();  // kill the timer and release resources if any
-      dsay("xretrace loaded - time " :+ _time('G'), "xretrace");
+      //dsay("xretrace loaded - time " :+ _time('G'), "xretrace");
       // https://www.epochconverter.com/
    }
    else
