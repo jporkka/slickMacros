@@ -1,17 +1,11 @@
 
-/******************************************************************************
-*  $Revision: 1.1 $                                                            
-******************************************************************************/
 
-#ifdef XRETRACE_INCLUDING
+#ifdef XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
 
-// XRETRACE_INCLUDING is used to prevent the plugin mechanism from loading this
-// module as an independent module
+// XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC is used to prevent the plugin 
+// mechanism from loading this module as an independent module
 
 
-// this module is normally #INCLUDEd by xretrace.e (I think the reason for this
-// was because access to xretrace_config_data didn't work reliably at startup
-// when they were separate modules.)
 
 // #include "slick.sh"
 // 
@@ -28,7 +22,7 @@
 
 defeventtab xretrace_form;
 
-boolean def_xretrace_no_delayed_start;
+bool def_xretrace_no_delayed_start;
 
 
 
@@ -199,7 +193,7 @@ static call_config_funcs(int what, xretrace_config * config_ptr, typeless val = 
 #undef CALL
 
 
-static void xsave_config(xretrace_config * dptr, _str section_name, boolean no_form = false)
+static void xsave_config(xretrace_config * dptr, _str section_name, bool no_form = false)
 {
    // copy widget property values into item values
    if (!no_form)
@@ -209,7 +203,7 @@ static void xsave_config(xretrace_config * dptr, _str section_name, boolean no_f
              (int)xretrace_config_data.retrace_cursor_min_region_pause_time_str;
    xretrace_config_data.retrace_cursor_min_line_pause_time = 
              (int)xretrace_config_data.retrace_cursor_min_line_pause_time_str;
-   call_list('_xretrace_config_update', &xretrace_config_data);
+   //call_list('_xretrace_config_update', &xretrace_config_data);
 
    int section_view, current_view;
    current_view = _create_temp_view(section_view);
@@ -225,7 +219,7 @@ static void xsave_config(xretrace_config * dptr, _str section_name, boolean no_f
    call_config_funcs(CFG_FUNC_INSERT_ITEM, dptr, 0);
 
    int res = _ini_replace_section(_config_path() :+ 'xretrace_config.ini', section_name, section_view);
-   boolean temp = def_xretrace_no_delayed_start;
+   bool temp = def_xretrace_no_delayed_start;
    def_xretrace_no_delayed_start = !xretrace_config_data.retrace_delayed_start;
    if (temp != def_xretrace_no_delayed_start) {
       _config_modify_flags(CFGMODIFY_DEFVAR);
@@ -394,9 +388,29 @@ void disable_button.lbutton_up()
 }
 
 
+static void show_xretrace_xxutils_help()
+{
+   //shell( get_env('SystemRoot') :+ '\explorer.exe /n,/e,/select,' :+ XRETRACE_PATH :+ 'xretrace-xxutils-help.pdf', 'A' );
+
+   filename := XRETRACE_PATH :+ "xretrace-xxutils-help.pdf";
+   cmd := "";
+   if (_isWindows()) {
+      cmd = 'start';
+   } else if (_isLinux()) {
+      cmd = 'xdg-open';
+   } else {
+      cmd = 'open';
+   }
+   rc := shell(cmd' '_maybe_quote_filename(filename));
+
+   //edit(_maybe_quote_filename(XRETRACE_MODULE_NAME));
+   //goto_line(XRETRACE_SETTINGS_HELP_LINE);
+}
+
+
 void help_button.lbutton_up()
 {
-   show_xretrace_options_help();
+   show_xretrace_xxutils_help();
 }
 
 void ctlcommand_reset.lbutton_up()
@@ -431,6 +445,6 @@ void ctlcommand_debug.lbutton_up()
 //}
 
 
-
+// XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
 #endif
 

@@ -45,7 +45,7 @@
  *  
  * << list creation >> 
  * ===================
- * void dlist_construct(dlist & dl, int nmax, boolean overwritef)
+ * void dlist_construct(dlist & dl, int nmax, bool overwritef)
  * void dlist_reset(dlist & dl)
  * dlist_iterator dlist_iterator_new(dlist & dl, dlist_node_handle x = -1)
  * void dlist_invalidate_iterator(dlist_iterator & iter)
@@ -53,54 +53,56 @@
  *  
  * << add/remove list items >> 
  * ===========================
- * boolean dlist_push_front(dlist & dl, typeless & val)
- * boolean dlist_push_back(dlist & dl, typeless & val)
+ * bool dlist_push_front(dlist & dl, typeless & val)
+ * bool dlist_push_back(dlist & dl, typeless & val)
  * void dlist_pop_front(dlist & dl)
  * void dlist_pop_back(dlist & dl)
  * void dlist_move_to_front(dlist_iterator iter)
  * void dlist_erase(dlist_iterator & iter)
- * boolean dlist_insert(dlist_iterator iter, typeless & val)
+ * bool dlist_insert(dlist_iterator iter, typeless & val)
  *  
  *  
  * << iterator manipulation >> 
  * ===========================
  * dlist_iterator dlist_begin(dlist & dl)
  * dlist_iterator dlist_end(dlist & dl)
- * boolean dlist_iterator_end(dlist_iterator & dl)
- * boolean dlist_iterator_begin(dlist_iterator & dl)
- * boolean dlist_prev(dlist_iterator & iter, int steps = 1)
- * boolean dlist_next(dlist_iterator & iter, int steps = 1)
+ * bool dlist_iterator_end(dlist_iterator & dl)
+ * bool dlist_iterator_begin(dlist_iterator & dl)
+ * bool dlist_prev(dlist_iterator & iter, int steps = 1)
+ * bool dlist_next(dlist_iterator & iter, int steps = 1)
  *  
  *  
  * << access list item data >> 
  * ===========================
  * typeless * dlist_getp(dlist_iterator & iter)
  * typeless * dlist_get_at(dlist_iterator iter, int steps)           (untested!)
- * boolean dlist_getp_next(dlist_iterator & iter, typeless * & dp)   (untested!)
- * boolean dlist_getp_prev(dlist_iterator & iter, typeless * & dp)   (untested!)
+ * bool dlist_getp_next(dlist_iterator & iter, typeless * & dp)   (untested!)
+ * bool dlist_getp_prev(dlist_iterator & iter, typeless * & dp)   (untested!)
  *  
  *  
  * << query functions >> 
  * =====================
- * int dlist_get_distance(dlist_iterator iter, boolean backwards = false)
+ * int dlist_get_distance(dlist_iterator iter, bool backwards = false)
  * int dlist_size(dlist & dl)
- * boolean dlist_is_empty(dlist & dl)
- * boolean dlist_query_full(dlist & dl)
- * boolean dlist_iterator_at_end(dlist_iterator & dl)
- * boolean dlist_iterator_at_start(dlist_iterator & dl)
- * boolean dlist_iter_valid(dlist_iterator iter)
+ * bool dlist_is_empty(dlist & dl)
+ * bool dlist_query_full(dlist & dl)
+ * bool dlist_iterator_at_end(dlist_iterator & dl)
+ * bool dlist_iterator_at_start(dlist_iterator & dl)
+ * bool dlist_iter_valid(dlist_iterator iter) 
+ * bool dlist_query_modified(dlist & dl)
+ *  
  *  
  *  
  * << iterate and search functions >>
  * ==================================
  * void dlist_iterate(dlist_iterator & iter, _str callback_name = 'dlist_iterate_default_callback', 
- *           boolean auto_iterate = false, boolean backwards = false, boolean quiet = false)
+ *           bool auto_iterate = false, bool backwards = false, bool quiet = false)
  * 
- * boolean dlist_iterate_list(dlist & dl, _str callback_name = 'dlist_iterate_default_callback', 
- *                         boolean auto_iterate = false, boolean backwards = false, boolean quiet = false)
+ * bool dlist_iterate_list(dlist & dl, _str callback_name = 'dlist_iterate_default_callback', 
+ *                         bool auto_iterate = false, bool backwards = false, bool quiet = false)
  * 
- * boolean dlist_find(dlist_iterator & iter, typeless & val)
- * boolean dlist_find2(dlist & dl, typeless & val)
+ * bool dlist_find(dlist_iterator & iter, typeless & val)
+ * bool dlist_find2(dlist & dl, typeless & val)
  *  
  * 
 ******************************************************************************/
@@ -117,10 +119,13 @@ struct dlist {
    int s_head;   
    int s_tail;
    int max_nodes;
-   boolean overwrite_f;
+   bool overwrite_f;
    dlist_node nodes[];
    int free_head;
    int free_count;
+   int xmodified;
+   typeless future1;   // add some spare members to make it easier to change in future
+   typeless future2;
 };
 
 struct dlist_iterator {
@@ -130,7 +135,7 @@ struct dlist_iterator {
 
 
 // create a new list with nmax max nodes
-void dlist_construct(dlist & dl, int nmax, boolean overwritef)
+void dlist_construct(dlist & dl, int nmax, bool overwritef)
 {
    dl.nodes._makeempty();
    dl.s_head = dl.s_tail = -1;
@@ -138,6 +143,7 @@ void dlist_construct(dlist & dl, int nmax, boolean overwritef)
    dl.overwrite_f = overwritef;
    dl.free_head = -1;
    dl.free_count = 0;
+   dl.xmodified = 0;
 }
 
 
@@ -163,7 +169,7 @@ void dlist_invalidate_iterator(dlist_iterator & iter)
 }
 
 // return true if the iterator is valid
-boolean dlist_iter_valid(dlist_iterator iter)
+bool dlist_iter_valid(dlist_iterator iter)
 {
    return iter.hndl >= 0  &&  iter.hndl < iter.listptr->nodes._length() && 
           iter.listptr->nodes[iter.hndl].s_prev > -2;
@@ -213,6 +219,7 @@ static insert_at_front(dlist & dl, int nodex)
       dl.s_tail = nodex;
    }
    dl.s_head = nodex;
+   dl.xmodified = 1;
 }
 
 
@@ -228,6 +235,7 @@ static void insert_at_back(dlist & dl, int nodex)
       dl.s_head = nodex;
    }
    dl.s_tail = nodex;
+   dl.xmodified = 1;
 }
 
 
@@ -251,11 +259,12 @@ static void move_to_free_list(dlist & dl, int nodex)
    dl.nodes[nodex].s_prev = -2;  // free list is singly linked
    dl.free_head = nodex;
    ++dl.free_count;
+   dl.xmodified = 1;
 }
 
 
 // return true if the list is full
-boolean dlist_query_full(dlist & dl)
+bool dlist_query_full(dlist & dl)
 {
    if (dl.free_head >= 0) {
       return false;
@@ -264,7 +273,18 @@ boolean dlist_query_full(dlist & dl)
 }
 
 
-static int dlist_get_new_node(dlist & dl, boolean front)
+// query and clear the xmodified flag
+bool dlist_query_modified(dlist & dl)
+{
+   if ( dl.xmodified > 0 ) {
+      dl.xmodified = 0;
+      return true;
+   }
+   return false;
+}
+
+
+static int dlist_get_new_node(dlist & dl, bool front)
 {
    int nnode = dl.free_head;
    if (nnode >= 0) {
@@ -292,7 +312,7 @@ static int dlist_get_new_node(dlist & dl, boolean front)
 
 
 // return true if val is successfully added to the front of the list
-boolean dlist_push_front(dlist & dl, typeless & val)
+bool dlist_push_front(dlist & dl, typeless & val)
 {
    int nnode = dlist_get_new_node(dl, true);
    if (nnode < 0) {
@@ -300,12 +320,13 @@ boolean dlist_push_front(dlist & dl, typeless & val)
    }
    insert_at_front(dl, nnode);
    dl.nodes[nnode].s_data = val;
+   dl.xmodified = 1;
    return true;
 }
 
 
 // return true if val is successfully added to the end of the list
-boolean dlist_push_back(dlist & dl, typeless & val)
+bool dlist_push_back(dlist & dl, typeless & val)
 {
    int nnode = dlist_get_new_node(dl, false);
    if (nnode < 0) {
@@ -313,6 +334,7 @@ boolean dlist_push_back(dlist & dl, typeless & val)
    }
    insert_at_back(dl, nnode);
    dl.nodes[nnode].s_data = val;
+   dl.xmodified = 1;
    return true;
 }
 
@@ -321,6 +343,7 @@ boolean dlist_push_back(dlist & dl, typeless & val)
 void dlist_pop_front(dlist & dl)
 {
    move_to_free_list(dl,dl.s_head);
+   dl.xmodified = 1;
 }
 
 
@@ -328,12 +351,13 @@ void dlist_pop_front(dlist & dl)
 void dlist_pop_back(dlist & dl)
 {
    move_to_free_list(dl, dl.s_tail);
+   dl.xmodified = 1;
 }
 
 
 // Return the distance the item referred to by "it" is from the start (or end)
 // The first item in the list is a distance of "1" from the start.
-int dlist_get_distance(dlist_iterator iter, boolean backwards = false)
+int dlist_get_distance(dlist_iterator iter, bool backwards = false)
 {
    dlist * dl = iter.listptr;
    int dist = 1;
@@ -358,7 +382,7 @@ int dlist_get_distance(dlist_iterator iter, boolean backwards = false)
 
 // If the iterator is invalid on entry, then it goes to the end of the list.
 // If the iterator is already at the start of the list then it is made invalid.
-boolean dlist_prev(dlist_iterator & iter, int steps = 1)
+bool dlist_prev(dlist_iterator & iter, int steps = 1)
 {
    dlist * dl = iter.listptr;
    int sx = iter.hndl;
@@ -379,7 +403,7 @@ boolean dlist_prev(dlist_iterator & iter, int steps = 1)
 
 // If the iterator is invalid on entry, then it goes to the start of the list.
 // If the iterator is already at the end of the list then it is made invalid.
-boolean dlist_next(dlist_iterator & iter, int steps = 1)
+bool dlist_next(dlist_iterator & iter, int steps = 1)
 {
    dlist * dl = iter.listptr;
    int sx = iter.hndl;
@@ -400,7 +424,7 @@ boolean dlist_next(dlist_iterator & iter, int steps = 1)
 
 // return true if pointing at the last item in the list.
 // Assumes the iterator is valid and the list isn't empty.
-boolean dlist_iterator_at_end(dlist_iterator & dl)
+bool dlist_iterator_at_end(dlist_iterator & dl)
 {
    return dl.hndl == dl.listptr->s_tail;
 }
@@ -408,7 +432,7 @@ boolean dlist_iterator_at_end(dlist_iterator & dl)
 
 // return true if pointing at the first item in the list.
 // Assumes the iterator is valid and the list isn't empty.
-boolean dlist_iterator_at_start(dlist_iterator & dl)
+bool dlist_iterator_at_start(dlist_iterator & dl)
 {
    return dl.hndl == dl.listptr->s_head;
 }
@@ -430,7 +454,7 @@ dlist_iterator dlist_end(dlist & dl)
 
 // assign the referenced iterator to the last item in the list
 // return false if the list is empty
-boolean dlist_iterator_end(dlist_iterator & dl)
+bool dlist_iterator_end(dlist_iterator & dl)
 {
    dl = dlist_end(*dl.listptr);
    return dlist_iter_valid(dl);
@@ -439,7 +463,7 @@ boolean dlist_iterator_end(dlist_iterator & dl)
 
 // assign the referenced iterator to the first item in the list
 // return false if the list is empty
-boolean dlist_iterator_begin(dlist_iterator & dl)
+bool dlist_iterator_begin(dlist_iterator & dl)
 {
    dl = dlist_begin(*dl.listptr);
    return dlist_iter_valid(dl);
@@ -476,7 +500,7 @@ typeless * dlist_get_at(dlist_iterator iter, int steps)
 
 
 // return a pointer to the data of the list entry referenced by (iter + 1)
-boolean dlist_getp_next(dlist_iterator & iter, typeless * & dp)
+bool dlist_getp_next(dlist_iterator & iter, typeless * & dp)
 {
    if (dlist_next(iter)) {
       dp = dlist_getp(iter);
@@ -489,7 +513,7 @@ boolean dlist_getp_next(dlist_iterator & iter, typeless * & dp)
 
 
 // return a pointer to the data of the list entry referenced by (iter - 1)
-boolean dlist_getp_prev(dlist_iterator & iter, typeless * & dp)
+bool dlist_getp_prev(dlist_iterator & iter, typeless * & dp)
 {
    if (dlist_prev(iter)) {
       dp = dlist_getp(iter);
@@ -523,7 +547,7 @@ int dlist_size(dlist & dl)
 
 
 // dlist_is_empty returns true if the list is empty
-boolean dlist_is_empty(dlist & dl)
+bool dlist_is_empty(dlist & dl)
 {
    return dl.s_head < 0;
 }
@@ -532,7 +556,7 @@ boolean dlist_is_empty(dlist & dl)
 // dlist_insert inserts after the node referred to by iter. If iter, or
 // the node it refers to are invalid, the value is inserted at the front of
 // the list. 
-boolean dlist_insert(dlist_iterator iter, typeless & val)
+bool dlist_insert(dlist_iterator iter, typeless & val)
 {
    dlist_node * np;
    if (iter.hndl < 0 || iter.hndl >= iter.listptr->nodes._length() || iter.listptr->nodes[iter.hndl].s_prev < -1) {
@@ -560,6 +584,7 @@ boolean dlist_insert(dlist_iterator iter, typeless & val)
    np->s_next = nnode;
    // copy the value
    iter.listptr->nodes[nnode].s_data = val;
+   iter.listptr->xmodified = 1;
    return true;
 }
 
@@ -574,7 +599,7 @@ boolean dlist_insert(dlist_iterator iter, typeless & val)
 
 static void qmessage(_str str, int quiet = 0)
 {
-   static boolean quietly;
+   static bool quietly;
    if (quiet == QM_SQON) {
       quietly = true;
    } else if (quiet == QM_SQOFF) {
@@ -636,7 +661,7 @@ int dlist_iterate_default_callback(int cmd, dlist_iterator & iter)
  * on entry .  Pressing ENTER exits without restoring the cursor. 
  ******************************************************************************/
 void dlist_iterate(dlist_iterator & iter, _str callback_name = 'dlist_iterate_default_callback', 
-          boolean auto_iterate = false, boolean backwards = false, boolean quiet = false)
+          bool auto_iterate = false, bool backwards = false, bool quiet = false)
 {
    int lpos,k;
    int start_line = _mdi.p_child.p_line;
@@ -738,8 +763,8 @@ void dlist_iterate(dlist_iterator & iter, _str callback_name = 'dlist_iterate_de
 
 // dlist_iterate_list is same as dlist_iterate except a ref to a list is passed
 // instead of an iterator.
-boolean dlist_iterate_list(dlist & dl, _str callback_name = 'dlist_iterate_default_callback', 
-                        boolean auto_iterate = false, boolean backwards = false, boolean quiet = false)
+bool dlist_iterate_list(dlist & dl, _str callback_name = 'dlist_iterate_default_callback', 
+                        bool auto_iterate = false, bool backwards = false, bool quiet = false)
 {
    dlist_iterator iter = dlist_iterator_new(dl); 
    dlist_iterate(iter, callback_name, auto_iterate, backwards, quiet);
@@ -749,7 +774,7 @@ boolean dlist_iterate_list(dlist & dl, _str callback_name = 'dlist_iterate_defau
 
 // dlist_find searches the list from the start, looking for val.
 // If found, the return value is true and iter refers to the found item.
-boolean dlist_find(dlist_iterator & iter, typeless & val)
+bool dlist_find(dlist_iterator & iter, typeless & val)
 {
    dlist_invalidate_iterator(iter);
    while (dlist_next(iter)) {
@@ -761,7 +786,7 @@ boolean dlist_find(dlist_iterator & iter, typeless & val)
 
 
 // dlist_find2 returns true if val is in the list
-boolean dlist_find2(dlist & dl, typeless & val)
+bool dlist_find2(dlist & dl, typeless & val)
 {
    dlist_iterator ab = dlist_iterator_new(dl);
    while (dlist_next(ab)) {
@@ -816,8 +841,8 @@ int dlist_callback2(int cmd, dlist_iterator & iter = null)
    return 0;
 }
 
-static dlist_iterate_l2(dlist & dl, _str callback_name, boolean auto_iterate = true, 
-                             boolean backwards = false, boolean quiet = false)
+static dlist_iterate_l2(dlist & dl, _str callback_name, bool auto_iterate = true, 
+                             bool backwards = false, bool quiet = false)
 {
    dlist_callback2(LIST_CALLBACK_INIT);
    dlist_iterate_list(dl,callback_name, auto_iterate, backwards, quiet);

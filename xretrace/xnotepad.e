@@ -1,15 +1,21 @@
 #include 'slick.sh'
 
-static /*int*/ notepad_number()
+
+static int notepad_number = 0;
+static int get_notepad_number()
 {
-   return('');
+   if ( ++notepad_number > 99 ) {
+      notepad_number = 1;
+   }
+   return notepad_number;
 }
 
-#define MAX_WIDTH_IN_PIXELS 800
-#define INITIAL_HEIGHT    4000
-#define INITIAL_WIDTH   3000
 
-typeless def_notepad_font = '';
+static const MAX_WIDTH_IN_PIXELS = 800;
+static const  INITIAL_HEIGHT   = 4000;
+static const  INITIAL_WIDTH  = 3000;
+
+static typeless def_notepad_font = '';
 
 
 static int pix2scale(int pix,int wid)
@@ -60,12 +66,12 @@ _command void xnotepad_create_time_date_string() name_info(',')
 /* places selected text in a floating 'notepad' window.  If a notepad window
    already exists, current selection is appended.
 */
-_command xnotepad(boolean select_word = false, _str string1 = '') name_info(','MARK_ARG2|VSARG2_MULTI_CURSOR|VSARG2_REQUIRES_EDITORCTL|VSARG2_READ_ONLY)
+_command xnotepad(bool select_word = false, _str string1 = '') name_info(','MARK_ARG2|VSARG2_MULTI_CURSOR|VSARG2_REQUIRES_EDITORCTL|VSARG2_READ_ONLY)
 {
    typeless p;
    save_pos(p);
    int pwin = p_window_id;
-   boolean no_selection = false;
+   bool no_selection = false;
 
    if ( !select_active() ) {
       no_selection = true;
@@ -87,7 +93,7 @@ _command xnotepad(boolean select_word = false, _str string1 = '') name_info(','M
 
          wid = _create_window(OI_FORM,
                               _mdi,
-                              'Notepad 'notepad_number(),
+                              'Notepad ' :+ get_notepad_number(),
                               _dx2lx(SM_TWIP, screen_midpt_x - 300),   // create window needs twips
                               _dy2ly(SM_TWIP, screen_midpt_y - 300),
                               INITIAL_WIDTH,//width
@@ -132,7 +138,7 @@ _command xnotepad(boolean select_word = false, _str string1 = '') name_info(','M
                editorwid.insert_line('');
 
             p_window_id = wid2;
-            index = find_index('notepad_resize', EVENTTAB_TYPE);
+            index = find_index('user_graeme_notepad_resize', EVENTTAB_TYPE);
             if (index) {
                wid.p_eventtab = index;
             }
@@ -189,9 +195,9 @@ _command xnotepad(boolean select_word = false, _str string1 = '') name_info(','M
    }
 }
 
-defeventtab notepad_resize
+defeventtab user_graeme_notepad_resize
 
-notepad_resize.on_resize()
+user_graeme_notepad_resize.on_resize()
 {
    int x = _control editwin;
    int wid = p_window_id;

@@ -1014,6 +1014,17 @@ _menu xmenu1 {
       "Lowcase char","xlowcase-char","","","";
       "Cap &selection","cap-selection", "","","";
    }
+   #if 0
+   submenu "Extra","","","" {
+      "Decrease font size","decrease-font-size","","","";
+      "Increase font size","increase-font-size","","","";
+      "Toggle font","toggle-font","","","";
+      "Save all","save-all-inhibit-buf-history","","","";
+      "-","","","","";
+      "&1 Function comment", "func-comment","","","";
+   }
+   #endif
+
    "&Help", "xxutils_help", "","","";
 
 }

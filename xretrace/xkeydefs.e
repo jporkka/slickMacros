@@ -6,6 +6,13 @@
 #pragma option(strictparens,on)
 
 
+#if __VERSION__ < 25
+#undef bool
+#define bool boolean
+#endif
+
+
+
 static _str get_key_binding_name(_str keyname)
 {
    int index = event2index(name2event(keyname));
@@ -16,7 +23,7 @@ static _str get_key_binding_name(_str keyname)
 }
 
 
-static output_key_binding(_str keyname, boolean use_double = false)
+static output_key_binding(_str keyname, bool use_double = false)
 {
    _str s = get_key_binding_name(keyname);
    if (s != '')  {
@@ -35,7 +42,7 @@ static output_key_binding(_str keyname, boolean use_double = false)
 
 static output_key_family(_str base_key)
 {
-   boolean use_double = base_key == "'";
+   bool use_double = base_key == "'";
    output_key_binding(base_key, use_double);
    output_key_binding('S-' :+ base_key, use_double);
    output_key_binding('C-' :+ base_key, use_double);
@@ -55,13 +62,13 @@ _command void xkey_bindings_show() name_info(','VSARG2_TEXT_BOX|VSARG2_REQUIRES_
       mkdir(_ConfigPath() :+ 'keybindings');
    }
    if ( !file_exists(fn) ) {
-      if (edit(' +t ' maybe_quote_filename(fn))) {
+      if (edit(' +t ' _maybe_quote_filename(fn))) {
          return;
       }
    }
    else
    {
-      if (edit(maybe_quote_filename(fn))) {
+      if (edit(_maybe_quote_filename(fn))) {
          return;
       }
    }

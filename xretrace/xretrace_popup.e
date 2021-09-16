@@ -1,10 +1,13 @@
 
-#include "slick.sh"
 
-#pragma option(strictsemicolons,on)
-#pragma option(strict,on)
-#pragma option(autodecl,off)
-#pragma option(strictparens,on)
+#ifdef XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
+
+// #include "slick.sh"
+// 
+// #pragma option(strictsemicolons,on)
+// #pragma option(strict,on)
+// #pragma option(autodecl,off)
+// #pragma option(strictparens,on)
 
 
 
@@ -87,24 +90,27 @@ _control TextLabel1;
 _control TextLabel2;
 _control ctlpicture1;
 
-int popup_form_p_x = -1;
-int popup_form_p_y = -1;
+int xretrace_popup_form_p_x = -1;
+int xretrace_popup_form_p_y = -1;
 
-int pix2scale(int pix,int form_id)
+static int pix2scale(int pix,int form_id)
 {
    return _dx2lx(form_id.p_xyscale_mode,pix);
 }
 
 
-int scale2pix(int scale,int form_id)
+static int scale2pix(int scale,int form_id)
 {
    return _lx2dx(form_id.p_xyscale_mode,scale);
 }
 
+#undef NUM_TEXT_LINES_MORE
+#undef NUM_TEXT_LINES_LESS
 
 #define NUM_TEXT_LINES_MORE 22
 #define NUM_TEXT_LINES_LESS 9
-static void set_label_text(int wid, boolean same_buffer, boolean more_or_less)
+
+static void set_label_text(int wid, bool same_buffer, bool more_or_less)
 {
    _str s1 = (same_buffer ? 'Toggle SAME/all buf' : 'Toggle same/ALL buf');
    _str s2 = (more_or_less ? 'More >>>' : 'Less <<<');
@@ -159,7 +165,7 @@ static void set_label_text(int wid, boolean same_buffer, boolean more_or_less)
 }
 
 
-static void set_text_window_size(int form_id, boolean more_or_less = false)
+static void set_text_window_size(int form_id, bool more_or_less = false)
 {
    set_label_text(form_id, true, more_or_less);
 
@@ -181,8 +187,8 @@ static void set_text_window_size(int form_id, boolean more_or_less = false)
 
    form_id.TextLabel1.p_height = ht;
    form_id.TextLabel2.p_height = ht;
-   form_id.p_x = pix2scale(popup_form_p_x, form_id);
-   form_id.p_y = pix2scale(popup_form_p_y,form_id);
+   form_id.p_x = pix2scale(xretrace_popup_form_p_x, form_id);
+   form_id.p_y = pix2scale(xretrace_popup_form_p_y,form_id);
 
    form_id.ctlpicture1.p_x = pix2scale(2,form_id);
    form_id.ctlpicture1.p_y = pix2scale(2,form_id);
@@ -190,9 +196,9 @@ static void set_text_window_size(int form_id, boolean more_or_less = false)
    form_id.ctlpicture1.p_width = form_id.p_width - pix2scale(4,form_id);
 }
 
-static boolean more_or_less;
+static bool more_or_less;
 
-void xretrace_popup_update_text(int wid, boolean same_buffer, boolean popup_show_more_or_less)
+static void xretrace_popup_update_text(int wid, bool same_buffer, bool popup_show_more_or_less)
 {
    if (more_or_less != popup_show_more_or_less) {
       more_or_less = popup_show_more_or_less;
@@ -202,7 +208,7 @@ void xretrace_popup_update_text(int wid, boolean same_buffer, boolean popup_show
 }
 
 
-int xretrace_show_popup_window(boolean first_time = false)
+static int xretrace_show_popup_window(bool first_time = false)
 {
    int orig_focus = _get_focus();
    int wid = _find_object('xretrace_popup_form');
@@ -234,7 +240,7 @@ int xretrace_show_popup_window(boolean first_time = false)
 }
 
 
-void xretrace_hide_popup_window()
+static void xretrace_hide_popup_window()
 {
    int wid = _find_object('xretrace_popup_form');
    if (wid != 0) {
@@ -246,7 +252,7 @@ void xretrace_hide_popup_window()
 }
 
 
-void xretrace_destroy_popup_window_if_any()
+static void xretrace_destroy_popup_window_if_any()
 {
    int wid = _find_object('xretrace_popup_form');
    if (wid != 0) {
@@ -256,21 +262,21 @@ void xretrace_destroy_popup_window_if_any()
 }
 
 
-_command void xrpop() name_info(',')
-{
-   xretrace_show_popup_window();
-}
+// _command void xrpop() name_info(',')
+// {
+//    xretrace_show_popup_window();
+// }
+// 
+// _command void xrpopk() name_info(',')
+// {
+//    xretrace_destroy_popup_window_if_any();
+// }
 
-_command void xrpopk() name_info(',')
-{
-   xretrace_destroy_popup_window_if_any();
-}
 
-
-set_popup_window_pos(int x, int y)
+static set_popup_window_pos(int x, int y)
 {
-   popup_form_p_x = x;
-   popup_form_p_y = y;
+   xretrace_popup_form_p_x = x;
+   xretrace_popup_form_p_y = y;
    xretrace_show_popup_window();
 }
 
@@ -292,12 +298,15 @@ void ctlpicture1.lbutton_up()
 
 
 
-definit()
+xretrace_popup_definit()
 {
-   if (popup_form_p_x == -1 || popup_form_p_y == -1) {
-      popup_form_p_x = 500;  // pixels
-      popup_form_p_y = 500;
+   if (xretrace_popup_form_p_x == -1 || xretrace_popup_form_p_y == -1) {
+      xretrace_popup_form_p_x = 500;  // pixels
+      xretrace_popup_form_p_y = 500;
    }
 }
+
+// XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
+#endif
 
 

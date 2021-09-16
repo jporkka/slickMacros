@@ -195,6 +195,8 @@ static call_config_funcs(int what, xretrace_config * config_ptr, typeless val = 
 #undef CALL
 
 
+static void update_no_touch_line_modify_flag(int mflag);
+
 static void xsave_config(xretrace_config * dptr, _str section_name, bool no_form = false)
 {
    // copy widget property values into item values
@@ -226,6 +228,9 @@ static void xsave_config(xretrace_config * dptr, _str section_name, bool no_form
    if (temp != def_xretrace_no_delayed_start) {
       _config_modify_flags(CFGMODIFY_DEFVAR);
    }
+
+   update_no_touch_line_modify_flag(xretrace_config_data.no_touch_line_modify_flag);
+
 }
 
 

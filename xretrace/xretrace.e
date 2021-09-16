@@ -969,7 +969,7 @@ static bool check_for_new_retrace_region()
 
 static bool check_for_change_in_no_of_lines()
 {
-   if (previous_number_of_lines_in_buffer > number_of_lines_in_buffer) {
+   if (previous_number_of_lines_in_buffer != number_of_lines_in_buffer) {
       return true;
    }
    return false;
@@ -2056,7 +2056,6 @@ static void retrace_steps_event_loop2(bool list_selector, int popup_wid, bool on
 
 
 
-
 static void retrace_steps_event_loop(bool list_selector, int popup_wid, bool one_shot = false, bool step_buffers = false)
 {
    retrace_steps_event_loop2(list_selector, popup_wid, one_shot, null, step_buffers);
@@ -2411,6 +2410,11 @@ static void retrace_timer_callback1()
 //}
 
 
+static void update_no_touch_line_modify_flag(int mflag)
+{
+   retrace_option_land_on_line_clear_modify = (mflag == 0);
+}
+
 
 static void start_xretrace()
 {
@@ -2458,7 +2462,7 @@ static void start_xretrace()
 
    retrace_option_clear_modify_continually = false;
 
-   retrace_option_land_on_line_clear_modify = (xcfg.no_touch_line_modify_flag == 0);
+   update_no_touch_line_modify_flag(xcfg.no_touch_line_modify_flag);
 
    retrace_cursor_min_region_pause_time_counter = 1;
    previous_number_of_lines_in_buffer = number_of_lines_in_buffer = 0;

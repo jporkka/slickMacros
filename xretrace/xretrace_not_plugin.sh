@@ -2,7 +2,7 @@
 // xretrace_not_plugin.sh is copied to xretrace.sh by xload_macros.e when the non plugin xretrace is loaded
 // XRETRACE_IS_PLUGIN is undefined for non plugin
 
-#define XRETRACE_VERSION '2.10'
+#define XRETRACE_VERSION '2.12'
 
 #undef XRETRACE_IS_PLUGIN 
 
