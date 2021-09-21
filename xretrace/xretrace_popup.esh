@@ -1,11 +1,5 @@
 
 
-#ifdef XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
-
-
-// XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC is used to prevent the plugin 
-// mechanism from loading this module as an independent module
-
 
 
 // #include "slick.sh"
@@ -268,17 +262,6 @@ static void xretrace_destroy_popup_window_if_any()
 }
 
 
-// _command void xrpop() name_info(',')
-// {
-//    xretrace_show_popup_window();
-// }
-// 
-// _command void xrpopk() name_info(',')
-// {
-//    xretrace_destroy_popup_window_if_any();
-// }
-
-
 static set_popup_window_pos(int x, int y)
 {
    xretrace_popup_form_p_x = x;
@@ -312,7 +295,5 @@ xretrace_popup_definit()
    }
 }
 
-// XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
-#endif
 
 

@@ -1,8 +1,4 @@
 
-#ifdef DLINKLIST_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
-
-// DLINKLIST_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC is used to prevent the plugin 
-// mechanism from loading this module as an independent module
 
 
 // #include "slick.sh"
@@ -998,7 +994,4 @@ _command void test_dlist(int cmd = 1) name_info(',')
 #endif
 
 
-#endif
-// DLINKLIST_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC is used to prevent the plugin 
-// mechanism from loading this module as an independent module
 

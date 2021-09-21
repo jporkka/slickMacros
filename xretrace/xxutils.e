@@ -1,5 +1,7 @@
 #include "slick.sh"
 #include "tagsdb.sh"
+#import "tagwin.e"
+
 #include "xretrace.sh"
 
 #pragma option(strictsemicolons,on)
@@ -13,6 +15,16 @@
 #define bool boolean
 #endif
 
+#undef XUN
+#undef XUNS
+
+#define XUN(a) user_graeme_##a
+#define XUNS "user_graeme_"
+
+
+#include "DLinkList.esh"
+#include "xtemp-file-manager.esh"
+#include "xblock-selection-editor.esh"
 
 
 static bool    xxutils_debug = false;
@@ -32,7 +44,7 @@ static void xxdebug(...)
 }
 
 
-_command toggle_xxutils_debug()
+_command void XUN(toggle_xxutils_debug)()
 {
    if ( xxutils_debug ) {
       xxdebug("xxutils debug off");
@@ -68,7 +80,7 @@ _command void run_typora() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORC
    shell("typora " p_buf_name, "QA");
 }
 
-_command void xset_diff_region() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
+_command void XUN(xset_diff_region)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
 {
    if (_isno_name(p_DocumentName) || p_buf_name == '') {
       _message_box("Save the file before using this command");
@@ -97,7 +109,7 @@ _command void xset_diff_region() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_E
 }
    
    
-_command void xcompare_diff_region() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
+_command void XUN(xcompare_diff_region)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
 {
    if (_isno_name(p_DocumentName) || p_buf_name == '') {
       _message_box("Save the file before using this command");
@@ -141,7 +153,7 @@ _command void xcompare_diff_region() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIR
 }
    
 
-_command void xbeautify_project(bool ask = true, bool no_preview = false, bool autosave = true) name_info(',')
+_command void XUN(xbeautify_project)(bool ask = true, bool no_preview = false, bool autosave = true) name_info(',')
 {
    _str files_to_beautify [];
 
@@ -217,7 +229,7 @@ static _str get_search_cur_word()
 }
 
 
-_command int xsearch_workspace_cur_word_now() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
+_command int XUN(xsearch_workspace_cur_word_now)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
 {
    _str sw = get_search_cur_word();
    if (sw != '') {
@@ -233,7 +245,7 @@ _command int xsearch_workspace_cur_word_now() name_info(','VSARG2_READ_ONLY|VSAR
 }
 
 
-_command int xsearch_workspace_whole_cur_word_now() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
+_command int XUN(xsearch_workspace_whole_cur_word_now)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
 {
    _str sw = get_search_cur_word();
    if (sw != '') {
@@ -249,7 +261,7 @@ _command int xsearch_workspace_whole_cur_word_now() name_info(','VSARG2_READ_ONL
 }
 
 
-_command int xsearch_cur_word() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
+_command int XUN(xsearch_cur_word)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
 {
    _str sw = get_search_cur_word();
    if (sw == '') 
@@ -281,7 +293,7 @@ _command int xsearch_cur_word() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_ED
 }
 
 
-_command void xupcase_char()name_info(',' VSARG2_REQUIRES_EDITORCTL)
+_command void XUN(xupcase_char)()name_info(',' VSARG2_REQUIRES_EDITORCTL)
 {
    _select_char();
    cursor_right();
@@ -290,7 +302,7 @@ _command void xupcase_char()name_info(',' VSARG2_REQUIRES_EDITORCTL)
 }
 
 
-_command void xlowcase_char()name_info(',' VSARG2_REQUIRES_EDITORCTL)
+_command void XUN(xlowcase_char)()name_info(',' VSARG2_REQUIRES_EDITORCTL)
 {
    _select_char();
    cursor_right();
@@ -300,11 +312,11 @@ _command void xlowcase_char()name_info(',' VSARG2_REQUIRES_EDITORCTL)
 
 
 // copy path plus filename of the current buffer to the clipboard
-_command xcurbuf_path_to_clip() name_info(','VSARG2_MACRO|VSARG2_READ_ONLY)
+_command void XUN(xcurbuf_path_to_clip)() name_info(','VSARG2_MACRO|VSARG2_READ_ONLY)
 {
    _str str;
    if (_no_child_windows()) {
-      return 0;
+      return;
    }
    else { 
       str = _mdi.p_child.p_buf_name;
@@ -314,16 +326,16 @@ _command xcurbuf_path_to_clip() name_info(','VSARG2_MACRO|VSARG2_READ_ONLY)
 }
 
 // copy name (excluding path) of the current buffer to the clipboard
-_command xcurbuf_name_to_clip() name_info(','VSARG2_MACRO|VSARG2_READ_ONLY)
+_command void XUN(xcurbuf_name_to_clip)() name_info(','VSARG2_MACRO|VSARG2_READ_ONLY)
 {
    if (_no_child_windows()) {
-      return 0;
+      return;
    }
    push_clipboard_itype('CHAR','',1,true);
    append_clipboard_text(strip_filename(_mdi.p_child.p_buf_name,'P'));
 }
 
-_command void xproject_name_to_clip() name_info(',')
+_command void XUN(xproject_name_to_clip)() name_info(',')
 {
    push_clipboard_itype('CHAR','',1,true);
    append_clipboard_text(_project_name);
@@ -331,7 +343,7 @@ _command void xproject_name_to_clip() name_info(',')
 
 
 // explore configuration folder
-_command void explore_config() name_info(',')
+_command void XUN(explore_config)() name_info(',')
 {
    explore(_config_path());
 }
@@ -345,27 +357,27 @@ static _str get_vsroot_dir()
 }
 
 // explore slickedit installation folder
-_command void explore_vslick() name_info(',')
+_command void XUN(explore_vslick)() name_info(',')
 {
    explore(get_vsroot_dir());
 }
 
 
 // explore slickedit installation docs folder
-_command void explore_docs() name_info(',')
+_command void XUN(explore_docs)() name_info(',')
 {
    explore(get_vsroot_dir() :+ 'docs');
 }
 
 // explore active project vpj folder
-_command void explore_vpj() name_info(',')
+_command void XUN(explore_vpj)() name_info(',')
 {
    explore(_project_name);
 }
 
 
 // explore current buffer or pathname (if supplied as first parameter)
-_command void explore_cur_buffer() name_info(',')
+_command void XUN(explore_cur_buffer)() name_info(',')
 {
    if (arg()) {
       if (file_exists(arg(1))) {
@@ -402,14 +414,14 @@ static _str get_open_path(...)
 
 // open from path of current buffer or from specified path (if supplied as
 // the first parameter
-_command void xopen_from_here() name_info(',')
+_command void XUN(xopen_from_here)() name_info(',')
 {
    chdir(get_open_path(arg(1)),1);
    gui_open();
 }
 
 // open from configuration folder
-_command void xopen_from_config() name_info(',')
+_command void XUN(xopen_from_config)() name_info(',')
 {
    chdir(_config_path(),1);
    gui_open();
@@ -417,13 +429,13 @@ _command void xopen_from_config() name_info(',')
 
 
 // open vsstack error file
-_command void xopvss() name_info(',')
+_command void XUN(xopvss)() name_info(',')
 {
    edit(strip_filename(GetErrorFilename(),'N') :+ 'vsstack');
 }
 
 
-_command void xopen_logs() name_info(',')
+_command void XUN(xopen_logs)() name_info(',')
 {
    edit(_config_path() :+ "logs" :+ FILESEP :+ "vs.log");
    edit(_config_path() :+ "logs" :+ FILESEP :+ "pip.log");
@@ -490,14 +502,14 @@ static _str get_the_longest_line()
 }
 
 
-_command void xnotepad_word() name_info(',')
+_command void XUN(xnotepad_word)() name_info(',')
 {
-   xnotepad(true);
+   XUN(xnotepad)(true);
 }
 
-_command void xnotepad_create_time_date_string() name_info(',')
+_command void XUN(xnotepad_create_time_date_string)() name_info(',')
 {
-   xnotepad(false, stranslate(_date('I'),'-','/') :+ '-' :+ stranslate(_time('M'), '-', ':'));  
+   XUN(xnotepad)(false, stranslate(_date('I'),'-','/') :+ '-' :+ stranslate(_time('M'), '-', ':'));  
 }
 
 
@@ -505,7 +517,7 @@ _command void xnotepad_create_time_date_string() name_info(',')
 /* places selected text in a floating 'notepad' window.  If a notepad window
    already exists, current selection is appended.
 */
-_command xnotepad(bool select_word = false, _str string1 = '') name_info(','MARK_ARG2|VSARG2_MULTI_CURSOR|VSARG2_REQUIRES_EDITORCTL|VSARG2_READ_ONLY)
+_command void XUN(xnotepad)(bool select_word = false, _str string1 = '') name_info(','MARK_ARG2|VSARG2_MULTI_CURSOR|VSARG2_REQUIRES_EDITORCTL|VSARG2_READ_ONLY)
 {
    typeless p;
    save_pos(p);
@@ -695,7 +707,7 @@ static output_key_family(_str base_key)
 }
 
 
-_command void xxkey_bindings_show() name_info(','VSARG2_TEXT_BOX|VSARG2_REQUIRES_EDITORCTL|VSARG2_LINEHEX)
+_command void XUN(xxkey_bindings_show)() name_info(','VSARG2_TEXT_BOX|VSARG2_REQUIRES_EDITORCTL|VSARG2_LINEHEX)
 {
    _str fn = _ConfigPath() :+ 'keybindings' FILESEP 'group-keydefs.e';
    if ( !isdirectory(_ConfigPath() :+ 'keybindings') ) {
@@ -802,13 +814,13 @@ static generate_key_family_menu(_str base_key)
 }
 
 
-_menu xxkey_binding_trainer_menu {
+_menu XUN(xxkey_binding_trainer_menu) {
 }
 
 
-_command void xxkey_binding_trainer() name_info(',')
+_command void XUN(xxkey_binding_trainer)() name_info(',')
 {
-   int index=find_index("xxkey_binding_trainer_menu",oi2type(OI_MENU));
+   int index=find_index( XUNS "xxkey_binding_trainer_menu",oi2type(OI_MENU));
    if (!index) {
       return;
    }
@@ -847,7 +859,7 @@ static void show_xretrace_xxutils_help()
 {
    //shell( get_env('SystemRoot') :+ '\explorer.exe /n,/e,/select,' :+ XRETRACE_PATH :+ 'xretrace-xxutils-help.pdf', 'A' );
 
-   filename := XRETRACE_PATH :+ "xretrace-xxutils-help.pdf";
+   filename := XXUTILS_PATH :+ "xretrace-xxutils-help.pdf";
    cmd := "";
    if (_isWindows()) {
       cmd = 'start';
@@ -857,14 +869,14 @@ static void show_xretrace_xxutils_help()
       cmd = 'open';
    }
    rc := shell(cmd' '_maybe_quote_filename(filename));
-
+   message("xretrace version " :+ XRETRACE_VERSION);
    //edit(_maybe_quote_filename(XRETRACE_MODULE_NAME));
    //goto_line(XRETRACE_SETTINGS_HELP_LINE);
 }
 
 
 
-_command void check_xtemp_new_temporary_file() name_info(',')
+_command void XUN(check_xtemp_new_temporary_file)() name_info(',')
 {
    int xx1 = find_index("xtemp_new_temporary_file", COMMAND_TYPE);
    if ( index_callable(xx1) ) {
@@ -873,7 +885,7 @@ _command void check_xtemp_new_temporary_file() name_info(',')
 }
 
 
-_command void check_xtemp_new_temporary_file_no_keep() name_info(',')
+_command void XUN(check_xtemp_new_temporary_file_no_keep)() name_info(',')
 {
    int xx1 = find_index("xtemp_new_temporary_file_no_keep", COMMAND_TYPE);
    if ( index_callable(xx1) ) {
@@ -882,7 +894,7 @@ _command void check_xtemp_new_temporary_file_no_keep() name_info(',')
 }
 
 
-_command void check_start_xtemp_files_manager() name_info(',')
+_command void XUN(check_start_xtemp_files_manager)() name_info(',')
 {
    int xx1 = find_index("start_xtemp_files_manager", COMMAND_TYPE);
    if ( index_callable(xx1) ) {
@@ -891,7 +903,7 @@ _command void check_start_xtemp_files_manager() name_info(',')
 }
 
 
-_command void check_stop_xtemp_files_manager() name_info(',')
+_command void XUN(check_stop_xtemp_files_manager)() name_info(',')
 {
    int xx1 = find_index("stop_xtemp_files_manager", COMMAND_TYPE);
    if ( index_callable(xx1) ) {
@@ -900,7 +912,7 @@ _command void check_stop_xtemp_files_manager() name_info(',')
 }
 
 
-_command void xxutils_help() name_info(',')
+_command void XUN(xxutils_help)() name_info(',')
 {
    //int xx1 = find_index("show_xretrace_xxutils_help", PROC_TYPE);
    //if ( index_callable(xx1) ) {
@@ -912,107 +924,107 @@ _command void xxutils_help() name_info(',')
    show_xretrace_xxutils_help();
 }
 
-_menu xmenu1 {
-   "Set diff region", "xset_diff_region", "","","";
-   "Compare diff region", "xcompare_diff_region", "","","";
-   "Beautify project", "xbeautify_project", "","","";
-   "Diff last two buffers", "diff_last_two_buffers", "","","";
+_menu XUN(xmenu1) {
+   "Set diff region", XUNS "xset_diff_region", "","","";
+   "Compare diff region", XUNS "xcompare_diff_region", "","","";
+   "Beautify project", XUNS "xbeautify_project", "","","";
+   "Diff last two buffers",  XUNS "diff_last_two_buffers", "","","";
 
    "--","","","","";
-   "&New temporary file",  "check_xtemp_new_temporary_file", "","","";
+   "&New temporary file",  XUNS "check_xtemp_new_temporary_file", "","","";
    submenu "&More","","","" {
-      "Search &cplusplus.com", "search_cpp_ref", "", "", "";
-      "Search &devdocs", "search_devdocs_cpp", "", "", "";
-      "New temporary file no keep", "check_xtemp_new_temporary_file_no_keep", "","","";
-      "Start xtemp file manager","check_start_xtemp_files_manager","","",""; 
-      "Stop xtemp file manager","check_stop_xtemp_files_manager","","",""; 
-      "&xnotepad cur line or selection","xnotepad","","",""; 
-      "xnotepad cur word","xnotepad_word","","",""; 
-      "xnotepad date-time", "xnotepad_create_time_date_string","","","";
-      "Resize block selection","xblock_resize_editor","","",""; 
-      "Toggle &debug","toggle_xxutils_debug","","",""; 
+      "Search &cplusplus.com", XUNS "search_cpp_ref", "", "", "";
+      "Search &devdocs", XUNS "search_devdocs_cpp", "", "", "";
+      "New temporary file no keep", XUNS "check_xtemp_new_temporary_file_no_keep", "","","";
+      "Start xtemp file manager", XUNS "check_start_xtemp_files_manager","","",""; 
+      "Stop xtemp file manager", XUNS "check_stop_xtemp_files_manager","","",""; 
+      "&xnotepad cur line or selection", XUNS "xnotepad","","",""; 
+      "xnotepad cur word", XUNS "xnotepad_word","","",""; 
+      "xnotepad date-time", XUNS "xnotepad_create_time_date_string","","","";
+      "Resize block selection", XUNS "xblock_resize_editor","","",""; 
+      "Toggle &debug", XUNS "toggle_xxutils_debug","","",""; 
    }
    "--","","","","";
-   "Transpose chars","transpose-chars","","","";
-   "Transpose words","transpose-words","","","";
-   "Transpose lines","transpose-lines","","","";
-   "Append word to clipboard", "xappend_word_to_clipboard","","","";
+   "Transpose chars", "transpose_chars","","","";
+   "Transpose words", "transpose_words","","","";
+   "Transpose lines", "transpose_lines","","","";
+   "Append word to clipboard", XUNS "xappend_word_to_clipboard","","","";
    submenu "Copy names ","","","" {
-      "Copy cur buffer name to clipboard","xcurbuf-name-to-clip","","",""; 
-      "Copy cur buffer path+name to clipboard","xcurbuf-path-to-clip","","",""; 
-      "Copy active project name to clipboard","xproject_name_to_clip","","",""; 
+      "Copy cur buffer name to clipboard", XUNS "xcurbuf_name_to_clip","","",""; 
+      "Copy cur buffer path+name to clipboard", XUNS "xcurbuf_path_to_clip","","",""; 
+      "Copy active project name to clipboard", XUNS "xproject_name_to_clip","","",""; 
    }
    submenu "&Key bindings ","","","" {
-      "Show key &family","xxkey_binding_trainer","","",""; 
-      "Show &all key family","xxkey_bindings_show","","",""; 
-      "Find &source code for command","find_key_binding","","",""; 
-      "Key &bindings dialog","gui_keybindings","","",""; 
+      "Show key &family", XUNS "xxkey_binding_trainer","","",""; 
+      "Show &all key family", XUNS "xxkey_bindings_show","","",""; 
+      "Find &source code for command", "find_key_binding","","",""; 
+      "Key &bindings dialog", "gui_keybindings","","",""; 
    }
    "--","","","","";
-   "Alternate last 2 buffers","alternate_buffers","","",""; 
-   "Float &1","xfloat1","","",""; 
-   "Float &2","xfloat2","","",""; 
-   "Float &3","xfloat3","","",""; 
+   "Alternate last 2 buffers", XUNS "alternate_buffers","","",""; 
+   "Float &1", XUNS "xfloat1","","",""; 
+   "Float &2", XUNS "xfloat2","","",""; 
+   "Float &3", XUNS "xfloat3","","",""; 
    submenu "Set float","","","" {
-      "Float &1","xset_float1","","",""; 
-      "Float &2","xset_float2","","",""; 
-      "Float &3","xset_float3","","",""; 
+      "Float &1", XUNS "xset_float1","","",""; 
+      "Float &2", XUNS "xset_float2","","",""; 
+      "Float &3", XUNS "xset_float3","","",""; 
    }
-   "Save app layout","xsave_named_toolwindow_layout","","",""; 
-   "Restore app layout","xload_named_toolwindow_layout","","",""; 
+   "Save app layout", XUNS "xsave_named_toolwindow_layout","","",""; 
+   "Restore app layout", XUNS "xload_named_toolwindow_layout","","",""; 
 
    #if __VERSION__  >=  23
-   "Save session","save_named_state","","",""; 
-   "Restore session","load_named_state","","",""; 
+   "Save session", "save_named_state","","",""; 
+   "Restore session", "load_named_state","","",""; 
    #endif
 
    "--","","","","";
 
    submenu "&Bookmarks","","","" {
-      "&Save bookmarks","xsave_bookmarks","","",""; 
-      "&Restore bookmarks","xrestore_bookmarks","","",""; 
+      "&Save bookmarks", XUNS "xsave_bookmarks","","",""; 
+      "&Restore bookmarks", XUNS "xrestore_bookmarks","","",""; 
    }
 
    submenu "Com&plete","","","" {
-      "complete-prev-no-dup","complete_prev_no_dup","","","";
-      "complete-next-no-dup","complete_next_no_dup","","","";
-      "complete-prev","complete_prev","","","";
-      "complete-next","complete_next","","","";
-      "complete-list","complete_list","","","";
-      "complete-more","complete_more","","","";
+      "complete-prev-no-dup", "complete_prev_no_dup","","","";
+      "complete-next-no-dup", "complete_next_no_dup","","","";
+      "complete-prev", "complete_prev","","","";
+      "complete-next", "complete_next","","","";
+      "complete-list", "complete_list","","","";
+      "complete-more", "complete_more","","","";
    }
 
    submenu "&Select / Hide","","","" {
-      "select code block","select_code_block","","","";
-      "select paren","select_paren_block","","","";
-      "select procedure", "select_proc", "","","";
-      "hide code block","hide_code_block","","","";
-      "hide selection","hide_selection","","","";
-      "hide comments","hide_all_comments","","","";
-      "show all","show-all","","","";
+      "select code block",  "select_code_block","","","";
+      "select paren",  "select_paren_block","","","";
+      "select procedure",  "select_proc", "","","";
+      "hide code block",  "hide_code_block","","","";
+      "hide selection",  "hide_selection","","","";
+      "hide comments",  "hide_all_comments","","","";
+      "show all","show_all","","","";
    }
 
    submenu "&Open / E&xplore","","open-file or explore folder","" {
-      "Open from here","xopen_from_here","","","open from current buffer path";
-      "Open from config","xopen_from_config","","","open file from configuration folder";
-      "Edit vsstack error file","xopvss","","","Open Slick C error file";
-      "Edit Slick logs","xopen_logs","","","Open Slick log files";
+      "Open from here", XUNS "xopen_from_here","","","open from current buffer path";
+      "Open from config", XUNS "xopen_from_config","","","open file from configuration folder";
+      "Edit vsstack error file", XUNS "xopvss","","","Open Slick C error file";
+      "Edit Slick logs", XUNS "xopen_logs","","","Open Slick log files";
       "-","","","","";
-      "Explore current buffer","explore_cur_buffer","","","explore folder of current buffer";
-      "Explore config folder","explore_config","","",""; 
-      "Explore installation folder", "explore_vslick","","",""; 
-      "Explore docs","explore_docs","","",""; 
-      "Explore project","explore_vpj","","","";
+      "Explore current buffer", XUNS "explore_cur_buffer","","","explore folder of current buffer";
+      "Explore config folder", XUNS "explore_config","","",""; 
+      "Explore installation folder", XUNS  "explore_vslick","","",""; 
+      "Explore docs", XUNS "explore_docs","","",""; 
+      "Explore project", XUNS "explore_vpj","","","";
    }
 
    submenu "&Case conversion","","","" {
-      "&Lowcase selection","lowcase-selection","","","";
-      "&Upcase selection","upcase-selection","","","";
-      "Lowcase word","lowcase-word","","","";
-      "Upcase word","upcase-word","","","";
-      "Upcase &char","xupcase-char","","","";
-      "Lowcase char","xlowcase-char","","","";
-      "Cap &selection","cap-selection", "","","";
+      "&Lowcase selection","lowcase_selection","","","";
+      "&Upcase selection","upcase_selection","","","";
+      "Lowcase word","lowcase_word","","","";
+      "Upcase word","upcase_word","","","";
+      "Upcase &char", XUNS "xupcase_char","","","";
+      "Lowcase char", XUNS "xlowcase_char","","","";
+      "Cap &selection","cap_selection", "","","";
    }
    #if 0
    submenu "Extra","","","" {
@@ -1025,7 +1037,7 @@ _menu xmenu1 {
    }
    #endif
 
-   "&Help", "xxutils_help", "","","";
+   "&Help", XUNS "xxutils_help", "","","";
 
 }
 
@@ -1093,7 +1105,7 @@ static int save_all_bookmarks_to_file(_str &filename)
 }
   
   
-_command void xsave_and_clear_bookmarks(_str filename = null) name_info(',')
+static void xsave_and_clear_bookmarks(_str filename = null) 
 {
    if (filename != null) {
       if (!path_exists(strip_filename(filename,'N'))) {
@@ -1114,7 +1126,7 @@ _command void xsave_and_clear_bookmarks(_str filename = null) name_info(',')
 }
   
 
-_command void xclear_and_restore_bookmarks(_str filename = null) name_info(',')
+static void xclear_and_restore_bookmarks(_str filename = null) 
 {
    _str fn = _OpenDialog('', 'Load bookmarks from :','','','','', strip_filename(filename,'P'), 
                                strip_filename(filename,'N'), 'RetrieveSaveBookmarks');
@@ -1125,13 +1137,13 @@ _command void xclear_and_restore_bookmarks(_str filename = null) name_info(',')
 }
   
   
-_command void xsave_bookmarks() name_info(',')
+_command void XUN(xsave_bookmarks)() name_info(',')
 {
    xsave_and_clear_bookmarks(_config_path() :+ 'Bookmarks' :+ FILESEP :+ 'bookmarks-file1.bmk');
 }
 
 
-_command void xrestore_bookmarks() name_info(',')
+_command void XUN(xrestore_bookmarks)() name_info(',')
 {
    xclear_and_restore_bookmarks(_config_path() :+ 'Bookmarks' :+ FILESEP :+ 'bookmarks-file1.bmk');
 }
@@ -1230,7 +1242,7 @@ static _str _load_named_twlayout_callback(int reason, var result, _str key)
 
 // make sure the file xtoolwindow-layouts.ini is NOT open in the editor
 // when this command is used
-_command void xload_named_toolwindow_layout(_str sectionName="") name_info(',')
+_command void XUN(xload_named_toolwindow_layout)(_str sectionName="") name_info(',')
 {
    if (_version_compare(_version(), "23.0.0.0") > 0)  {
       // version 23 onwards have a built in command
@@ -1286,7 +1298,7 @@ _command void xload_named_toolwindow_layout(_str sectionName="") name_info(',')
 
 // make sure the file xtoolwindow-layouts.ini is NOT open in the editor
 // when this command is used
-_command void xsave_named_toolwindow_layout(_str sectionName="") name_info(',')
+_command void XUN(xsave_named_toolwindow_layout)(_str sectionName="") name_info(',')
 {
    if (_version_compare(_version(), "23.0.0.0") > 0)  {
       // version 23 onwards have a built in command
@@ -1436,7 +1448,7 @@ static void load_xuser_data()
 
 
 
-_command void xset_float1() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_READ_ONLY)
+_command void XUN(xset_float1)() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_READ_ONLY)
 {
    if (_no_child_windows()) {
       return;
@@ -1470,7 +1482,7 @@ _command void xset_float1() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_RE
 }
 
 
-_command void xset_float2() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_READ_ONLY)
+_command void XUN(xset_float2)() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_READ_ONLY)
 {
    if (_no_child_windows()) {
       return;
@@ -1500,7 +1512,7 @@ _command void xset_float2() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_RE
 }
 
 
-_command void xset_float3() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_READ_ONLY)
+_command void XUN(xset_float3)() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_READ_ONLY)
 {
    if (_no_child_windows()) {
       return;
@@ -1529,11 +1541,6 @@ _command void xset_float3() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_RE
    }
 }
 
-_command void xf1() name_info(',')
-{
-   message(_MDICurrentFloating() :+ " " :+ _mdi.p_child);
-}
-
 
 static int GetEditorCtlWid(int wid)
 {
@@ -1548,7 +1555,7 @@ static int GetEditorCtlWid(int wid)
 
 
 
-_command void xfloat1() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_MDI_EDITORCTL)
+_command void XUN(xfloat1)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_MDI_EDITORCTL)
 {
    if (_no_child_windows()) {
       return;
@@ -1577,7 +1584,7 @@ _command void xfloat1() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_MDI_EDITOR
 }
 
 
-_command void xfloat2() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_MDI_EDITORCTL)
+_command void XUN(xfloat2)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_MDI_EDITORCTL)
 {
    if (_no_child_windows()) {
       return;
@@ -1607,7 +1614,7 @@ _command void xfloat2() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_MDI_EDITOR
 }
 
 
-_command void xfloat3() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_MDI_EDITORCTL)
+_command void XUN(xfloat3)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_MDI_EDITORCTL)
 {
    if (_no_child_windows()) {
       return;
@@ -1636,14 +1643,14 @@ _command void xfloat3() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_MDI_EDITOR
 }
 
 
-_command void xappend_word_to_clipboard() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
+_command void XUN(xappend_word_to_clipboard)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
 {
    select_whole_word();
    append_to_clipboard();
 }
 
 static bool IsGotoNextBuffer=true;
-_command void alternate_buffers() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_READ_ONLY)
+_command void XUN(alternate_buffers)() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSARG2_READ_ONLY)
 {
    if (IsGotoNextBuffer) {
       back();            
@@ -1658,7 +1665,7 @@ _command void alternate_buffers() name_info(','VSARG2_REQUIRES_MDI_EDITORCTL|VSA
 
 // This macro requires google chrome browser and opens the cplusplus.com website at the cpp page
 // with the word at the cursor searched for
-_command void search_cpp_ref() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
+_command void XUN(search_cpp_ref)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
 {
    _str sw = get_search_cur_word();
    if (sw == '') 
@@ -1670,7 +1677,7 @@ _command void search_cpp_ref() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDI
 
 // This macro requires google chrome browser and opens the devdocs.io website at the cpp page
 // with the word at the cursor on the system clipboard
-_command void search_devdocs_cpp() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
+_command void XUN(search_devdocs_cpp)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL)
 {
    _str sw = get_search_cur_word();
    if (sw == '') 
@@ -1720,7 +1727,7 @@ void _switchbuf_last_two_buffers(_str oldbuffname, _str flags)
  * @description Runs a diff on the last 2 buffers that were selected
  *       If 2 buffers were not yet selected, it just brings up the regular diff window
  */
-_command int diff2,diff_last_two_buffers() name_info(',' VSARG2_REQUIRES_EDITORCTL | VSARG2_MARK | VSARG2_READ_ONLY)
+_command int XUN(diff2),XUN(diff_last_two_buffers)() name_info(',' VSARG2_REQUIRES_EDITORCTL | VSARG2_MARK | VSARG2_READ_ONLY)
 {
    int result = -99;
    if (last_buffer == '') { 
@@ -1741,9 +1748,9 @@ _command int diff2,diff_last_two_buffers() name_info(',' VSARG2_REQUIRES_EDITORC
 
 
 
-_command show_xmenu1() name_info(',')
+_command void XUN(show_xmenu1)() name_info(',')
 {
-   mou_show_menu('xmenu1');
+   mou_show_menu(XUNS 'xmenu1');
 }
 
 
@@ -1776,7 +1783,7 @@ static bool is_whitespace(_str s1)
    - stops at start of a word,
    - stops on any other non whitespace char
 */
-_command void xcursor_to_next_token_stop_on_all() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
+_command void XUN(xcursor_to_next_token_stop_on_all)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    int lim = 0;
    if ( is_wordchar(get_text()) ) {
@@ -1810,7 +1817,7 @@ _command void xcursor_to_next_token_stop_on_all() name_info(','VSARG2_READ_ONLY|
    - stops at start of a word,
    - stops on any other non whitespace char
 */
-_command void xcursor_to_prev_token_stop_on_all() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
+_command void XUN(xcursor_to_prev_token_stop_on_all)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    int lim = 0;
    cursor_left();
@@ -1839,7 +1846,7 @@ _command void xcursor_to_prev_token_stop_on_all() name_info(','VSARG2_READ_ONLY|
 /* xcursor_to_next_token
    - stops at start and end of a word
 */
-_command void xcursor_to_next_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
+_command void XUN(xcursor_to_next_token)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    int lim = 0;
    if ( is_wordchar(get_text()) ) {
@@ -1871,7 +1878,7 @@ _command void xcursor_to_next_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUI
 //             break;
 //          }
 //       }
-//       xcursor_to_next_token();
+//       XUN(xcursor_to_next_token)();
 //       if (!multicursor) {
 //          if (!already_looping) _MultiCursorLoopDone();
 //          break;
@@ -1885,7 +1892,7 @@ _command void xcursor_to_next_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUI
 /* xcursor_to_prev_token
    - stops at start and end of a word
 */
-_command void xcursor_to_prev_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
+_command void XUN(xcursor_to_prev_token)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    int lim = 0;
    cursor_left();
@@ -1920,7 +1927,7 @@ _command void xcursor_to_prev_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUI
 //            break;
 //         }
 //      }
-//      xcursor_to_prev_token();
+//      XUN(xcursor_to_prev_token)();
 //      if (!multicursor) {
 //         if (!already_looping) _MultiCursorLoopDone();
 //         break;
@@ -1929,33 +1936,33 @@ _command void xcursor_to_prev_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUI
 //}
 
 
-_command void xselect_to_next_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK|VSARG2_MULTI_CURSOR)
+_command void XUN(xselect_to_next_token)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK|VSARG2_MULTI_CURSOR)
 {
    _select_char();
-   xcursor_to_next_token();  // this function also has VSARG2_MULTI_CURSOR
+   XUN(xcursor_to_next_token)();  // this function also has VSARG2_MULTI_CURSOR
    _select_char();
 }
 
 
 
-_command void xselect_to_prev_token() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK|VSARG2_MULTI_CURSOR)
+_command void XUN(xselect_to_prev_token)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK|VSARG2_MULTI_CURSOR)
 {
    _select_char();
-   xcursor_to_prev_token();  // this function also has VSARG2_MULTI_CURSOR
+   XUN(xcursor_to_prev_token)();  // this function also has VSARG2_MULTI_CURSOR
    _select_char();
 }
 
 static _str  the_word;
 
 
-_command void xfind_next_whole_word_at_cursor() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
+_command void XUN(xfind_next_whole_word_at_cursor)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
 {
    int lim = 0;
    if ( !is_wordchar(get_text()) ) {
       cursor_left();
       if (!is_wordchar(get_text())) {
          while ( !is_wordchar(get_text()) ) {
-            xcursor_to_next_token();
+            XUN(xcursor_to_next_token)();
             if (++lim > 2000)
                return;
          }
@@ -1990,14 +1997,14 @@ _command void xfind_next_whole_word_at_cursor() name_info(','VSARG2_READ_ONLY|VS
 }
 
 
-_command void xfind_prev_whole_word_at_cursor() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
+_command void XUN(xfind_prev_whole_word_at_cursor)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
 {
    int lim = 0;
    if ( !is_wordchar(get_text()) ) {
       cursor_left();
       if (!is_wordchar(get_text())) {
          while ( !is_wordchar(get_text()) ) {
-            xcursor_to_prev_token();
+            XUN(xcursor_to_prev_token)();
             if (++lim > 2000)
                return;
          }
@@ -2018,7 +2025,7 @@ _command void xfind_prev_whole_word_at_cursor() name_info(','VSARG2_READ_ONLY|VS
       if (++lim > 2000)
          return;
    }
-   xcursor_to_prev_token();
+   XUN(xcursor_to_prev_token)();
    cursor_left();
    if ( find(the_word,'-IHPW') == 0 ) {
       _deselect();
@@ -2036,7 +2043,7 @@ _command void xfind_prev_whole_word_at_cursor() name_info(','VSARG2_READ_ONLY|VS
 
 static bool xquick_direction_is_fwd;
 
-_command void xquick_search() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
+_command void XUN(xquick_search)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
 {
    _str tw;
    if (select_active2()) {
@@ -2071,11 +2078,11 @@ _command void xquick_search() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDIT
    }
    xquick_direction_is_fwd = true;
    push_bookmark();
-   xfind_next_whole_word_at_cursor();
+   XUN(xfind_next_whole_word_at_cursor)();
 }
 
 
-_command void xquick_reverse_search() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
+_command void XUN(xquick_reverse_search)() name_info(','VSARG2_READ_ONLY|VSARG2_REQUIRES_EDITORCTL|VSARG2_MARK)
 {
    _str tw;
    if (select_active2()) {
@@ -2113,11 +2120,11 @@ _command void xquick_reverse_search() name_info(','VSARG2_READ_ONLY|VSARG2_REQUI
    }
    xquick_direction_is_fwd = false;
    push_bookmark();
-   xfind_prev_whole_word_at_cursor();
+   XUN(xfind_prev_whole_word_at_cursor)();
 }
 
 
-_command void xdelete_next_token(bool leave_a_space = true) name_info(','VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
+_command void XUN(xdelete_next_token)(bool leave_a_space = true) name_info(','VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    _deselect();
    if (is_wordchar(get_text())) {
@@ -2138,13 +2145,13 @@ _command void xdelete_next_token(bool leave_a_space = true) name_info(','VSARG2_
          }
       }
    }
-   xselect_to_next_token();
+   XUN(xselect_to_next_token)();
    delete_selection();
 }
  
 
 
-_command void xdelete_prev_token() name_info(','VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
+_command void XUN(xdelete_prev_token)() name_info(','VSARG2_REQUIRES_EDITORCTL|VSARG2_MULTI_CURSOR)
 {
    _deselect();
    _select_char();
@@ -2172,14 +2179,73 @@ _command void xdelete_prev_token() name_info(','VSARG2_REQUIRES_EDITORCTL|VSARG2
    }
    _deselect();
    cursor_right();
-   xselect_to_prev_token();
+   XUN(xselect_to_prev_token)();
    delete_selection();
 }
 
+
+void _on_load_module_xxutils(_str module_name)
+{
+   _str sm = strip(module_name, "B", "\'\"");
+   if (strip_filename(sm, 'PD') == "xxutils.ex") {
+      xtemp_list_active = false;
+      xtemp_kill_maintain_timer();
+   }
+}
+
+
+// kill the timer, clear markers and release resources
+void _on_unload_module_xxutils(_str module_name)
+{
+   _str sm = strip(module_name, "B", "\'\"");
+   if (_strip_filename(sm, 'PD') == "xxutils.ex") {
+      xtemp_list_active = false;
+      xtemp_kill_maintain_timer();
+   }
+}
+
+
+// slick is closing, save the list and discard no-keep files
+void _exit_xtemp_handle_temporary_files()
+{
+   xtemp_wkspace_has_been_closed = false;
+   xtemp_wkspace_has_been_opened = false;
+   xtemp_list_regenerate_needed = false;
+   if ( xtemp_list_active ) {
+      xtemp_save_file_list_to_disk();
+   }
+   // this deletes the no-keep files but causes problems on restart
+   //for_each_buffer('xtemp_maybe_discard_file');
+}
 
 
 definit()
 {
    load_xuser_data();
+
+   //xtemp_file_manager_definit()
+   //{
+      xtemp_ignore_cbquit = false;
+      remember_temp_files_from_workspace._makeempty();
+      xtemp_wkspace_has_been_opened = false;
+      xtemp_wkspace_has_been_closed = false;
+
+      xtemp_files_path = get_env('xtemp_files_path');
+      if ( xtemp_files_path == '' ) {
+         set_env('xtemp_files_path', XTEMP_FILES_PATH);
+         xtemp_files_path = XTEMP_FILES_PATH;
+      }
+
+      xtemp_list_active = false;
+      if ( arg(1) == 'L' ) {
+         // this is a reload
+         kill_xtemp_timer();
+      }
+      else
+      {
+         xtemp_list_maintain_timer = -1;
+      }
+   //}
+
 }
 

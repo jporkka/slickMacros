@@ -1,10 +1,5 @@
 
 
-#ifdef XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
-
-// XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC is used to prevent the plugin 
-// mechanism from loading this module as an independent module
-
 
 
 // #include "slick.sh"
@@ -460,7 +455,4 @@ void ctlcommand_debug.lbutton_up()
 //
 //}
 
-
-// XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
-#endif
 

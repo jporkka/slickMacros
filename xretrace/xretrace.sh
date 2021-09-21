@@ -2,11 +2,12 @@
 // xretrace_not_plugin.sh is copied to xretrace.sh by xload_macros.e when the non plugin xretrace is loaded
 // XRETRACE_IS_PLUGIN is undefined for non plugin
 
-#define XRETRACE_VERSION '2.12'
+#define XRETRACE_VERSION '2.20'
 
 #undef XRETRACE_IS_PLUGIN 
 
 #define XRETRACE_PATH _ConfigPath() :+ 'UserMacros' :+ FILESEP :+ 'xretrace' :+ FILESEP
+#define XXUTILS_PATH _ConfigPath() :+ 'UserMacros' :+ FILESEP :+ 'xretrace' :+ FILESEP
 
 #define XRETRACE_BITMAPS_PATH  XRETRACE_PATH :+ "bitmaps" :+ FILESEP
 

@@ -9,16 +9,41 @@
 #include "slick.sh"
 
 #import 'stdprocs.e'
+#import "se/ui/toolwindow.sh"
 
-
-#define XRETRACE_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
-#define DLINKLIST_INCLUDING_7A4E8DBF313742C4BB406FFE12FBADEC
 
 #include "xretrace.sh"
 #include 'DLinkList.esh'
 #include "xretrace_control_panel.esh"
 #include "xretrace_popup.esh"
 
+struct xretrace_item
+{
+   _str buf_name;
+   int mid_line;
+   int last_line;
+   int last_saved_line;
+   int flags;
+   int col;
+   int line_marker_id;
+   bool marker_id_valid;
+   int window_id;
+};
+// xretrace_item::flags 
+#define XRETRACE_MOD_FLAG 1
+#define XRETRACE_MOD_LIST_FLAG 2
+#define XRETRACE_MARKER_WAS_ALREADY_HERE_ON_OPENING 4
+
+struct xretrace_track_demodified_line_item
+{
+   _str buf_id;
+   int line_marker_id;
+   int window_id;
+};
+// DEMODIFY_LF is same flag as VIMARK_LF. The unused "high-bit" line-flags don't work.
+// #define DEMODIFY_LF VIMARK_LF    // 0x400000
+
+#include "xretrace_scrollbar.esh"
 
 
 
@@ -242,34 +267,7 @@
 
  
 
-struct xretrace_item
-{
-   _str buf_name;
-   int mid_line;
-   int last_line;
-   int last_saved_line;
-   int flags;
-   int col;
-   int line_marker_id;
-   bool marker_id_valid;
-   int window_id;
-};
-// xretrace_item::flags 
-#define XRETRACE_MOD_FLAG 1
-#define XRETRACE_MOD_LIST_FLAG 2
-#define XRETRACE_MARKER_WAS_ALREADY_HERE_ON_OPENING 4
 
-struct xretrace_track_demodified_line_item
-{
-   _str buf_id;
-   int line_marker_id;
-   int window_id;
-};
-
-
-
-// DEMODIFY_LF is same flag as VIMARK_LF. The unused "high-bit" line-flags don't work.
-// #define DEMODIFY_LF VIMARK_LF    // 0x400000
 
 // the timer must not be static
 int         xretrace_timer_handle = -1;
@@ -2658,6 +2656,8 @@ void _on_load_module_xretrace(_str module_name)
    if (_strip_filename(sm, 'PD') == 'xretrace.ex') {
       // if xretrace was previously running, release any resources
       xretrace_disable();
+      xretrace_delete_scrollbar_windows();
+
       //dsay("xretrace on-load - time " :+ _time('G'), "xretrace");
       // https://www.epochconverter.com/
    }
@@ -2670,6 +2670,8 @@ void _on_unload_module_xretrace(_str module_name)
    _str sm = strip(module_name, "B", "\'\"");
    if (_strip_filename(sm, 'PD') == 'xretrace.ex') {
       xretrace_disable();
+      xretrace_delete_scrollbar_windows();
+
       //dsay("xretrace on-unload - time " :+ _time('G'), "xretrace");
       // https://www.epochconverter.com/
    }
@@ -2808,6 +2810,7 @@ definit()
    } 
 
    xretrace_popup_definit();
+   xretrace_scrollbar_definit();
 }
 
 
