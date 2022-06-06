@@ -308,7 +308,7 @@ static int find_nearest_marker(int formid, int wid)
       if ( xretrace_scrollbar_forms[formid].listbox_row_associated_line_number[listbox_row + k2] > 0 ) {
          break;
       }
-      ++k2
+      ++k2;
    }
    //mysay( 'F4 ' :+ fred :+ ' ' :+ max_rows :+ ' ' :+ listbox_row :+ ' ' :+ k1 :+ ' ' k2);
    if ( k1 < k2 ) {
@@ -998,7 +998,37 @@ _command void xretrace_delete_scrollbar_windows() name_info(',')
 
 
 
-definit()   
+// _on_load is called before definit which is called before defload
+void _on_load_module_xretrace_scrollbar(_str module_name)
+{
+   _str sm = strip(module_name, "B", "\'\"");
+   if (_strip_filename(sm, 'PD') == 'xretrace_scrollbar.ex') {
+      int xx1 = find_index('xretrace_delete_scrollbar_windows', COMMAND_TYPE);
+      if (index_callable(xx1)) {
+         xretrace_delete_scrollbar_windows();
+      } 
+   }
+}
+
+
+void _on_unload_module_xretrace_scrollbar(_str module_name)
+{
+   _str sm = strip(module_name, "B", "\'\"");
+   if (_strip_filename(sm, 'PD') == 'xretrace_scrollbar.ex') {
+      int xx1 = find_index('xretrace_delete_scrollbar_windows', COMMAND_TYPE);
+      if (index_callable(xx1)) {
+         xretrace_delete_scrollbar_windows();
+      } 
+   }
+}
+
+
+
+
+
+
+
+static void xretrace_scrollbar_definit()   
 {
    tw_register_form('xretrace_scrollbar_form', TWF_SUPPORTS_MULTIPLE, DOCKAREAPOS_NONE);  
    //if (arg(1) != "L") {

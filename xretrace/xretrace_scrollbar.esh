@@ -915,6 +915,7 @@ static void check_update_xretrace_scrollbar()
 
 // xretrace_update_scrollbar_forms is called from xretrace timer callback - maintain_cursor_retrace_history - on 
 // every callback - default rate is every 250 ms.
+// It is also called from xscroll for xretrace wheel up/down event handler.
 // it deletes an xbar form when needed and updates the position of the scrollbar handle
 // return value is positive window ID if an xbar form needs markup added
 int xretrace_update_scrollbar_forms(bool event_loop = false)

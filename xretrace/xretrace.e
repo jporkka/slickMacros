@@ -287,6 +287,8 @@ static dlist *    ptr_retrace_cursor_list_for_buffer;
 static dlist *    ptr_retrace_modified_lines_list_for_buffer;
 static dlist *    ptr_bookmark_list_for_buffer;
 
+static dlist      dummy_empty_dlist;
+
 
 static dlist      track_demodified_list;
 
@@ -2315,6 +2317,8 @@ static int next_buffer_marked_line(dlist * list_ptr)
    int first_line = p_Noflines + 1;
    xretrace_item * ip;
    VSLINEMARKERINFO info1;
+   if ( list_ptr == null ) 
+      return 1;
    dlist_iterator iter = dlist_begin(*list_ptr);
    for( ; dlist_iter_valid(iter); dlist_next(iter)) {
       ip = dlist_getp(iter);
@@ -2777,6 +2781,9 @@ definit()
 definit()
 {
    max_log_per_session = 0;
+   ptr_retrace_cursor_list_for_buffer = &dummy_empty_dlist;
+   ptr_retrace_modified_lines_list_for_buffer = &dummy_empty_dlist;
+   ptr_bookmark_list_for_buffer = &dummy_empty_dlist;
    xretrace_load_config();  // from the filesystem
    if (arg(1)=="L") {
       // If this is a reload
